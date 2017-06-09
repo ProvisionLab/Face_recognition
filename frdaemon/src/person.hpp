@@ -33,6 +33,8 @@ public:
 
 	std::string	guid;
 
+	std::vector<float>	features;
+
 	std::map<std::string, cv::Mat>	files;
 
 	std::chrono::system_clock::time_point	last_recognize_time;	/// time of last successfull recognize

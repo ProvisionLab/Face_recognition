@@ -148,6 +148,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="..\src\frame_features.hpp" />
     <ClInclude Include="..\src\log.h" />
     <ClInclude Include="..\src\ftp_client.hpp" />
     <ClInclude Include="..\src\person.hpp" />
@@ -157,6 +158,7 @@
     <ClInclude Include="..\src\redis_client.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\src\frame_features.cpp" />
     <ClCompile Include="..\src\frd.cpp" />
     <ClCompile Include="..\src\ftp_client.cpp" />
     <ClCompile Include="..\src\person.cpp" />

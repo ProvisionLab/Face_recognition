@@ -8,6 +8,8 @@
 #include <boost/filesystem.hpp>
 namespace fs = boost::filesystem;
 
+#include "frame_features.hpp"
+
 #if !defined(USE_DAEMON) && defined(_DEBUG)
 
 #include <iostream>
@@ -20,20 +22,6 @@ namespace fs = boost::filesystem;
 #endif
 
 extern std::atomic<bool> sig_term;
-
-bool frame_contains_person(cv::Mat const & frame, Person const & person)
-{
-	for (auto & f : person.files)
-	{
-		cv::Mat const & img = f.second;
-		std::this_thread::sleep_for(std::chrono::milliseconds(3));
-
-		int x = std::chrono::system_clock::now().time_since_epoch().count() % 100;
-		if (x < 5) return true;
-	}
-
-	return false;
-}
 
 Person::Person(std::ifstream & f)
 {
@@ -180,12 +168,15 @@ std::vector<std::shared_ptr<Person>> PersonSet::recognize(cv::Mat const & frame)
 {
 	std::vector<std::shared_ptr<Person>> found;
 
+	FrameFeatures ff;
+	ff.generate(frame);
+
 	for (auto & person : persons)
 	{
 		if (sig_term)
 			return{};
 
-		if (frame_contains_person(frame, *person))
+		if (ff.contains_person(*person))
 		{
 			found.push_back(person);
 		}
@@ -263,7 +254,7 @@ std::vector<std::shared_ptr<Person>> PersonSet::recognize(cv::Mat const & frame)
 
 			while (!ps.empty())
 			{
-				if (frame_contains_person(frame, *ps.front()))
+				if (ff.contains_person(*ps.front()))
 				{
 					found.push_back(ps.front());
 				}

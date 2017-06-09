@@ -39,6 +39,9 @@
     <ClInclude Include="..\src\log.h">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\frame_features.hpp">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\frd.cpp">
@@ -54,6 +57,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\src\person.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\frame_features.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
