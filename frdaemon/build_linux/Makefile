@@ -1,11 +1,12 @@
 
-TARGET = frd
+TARGET = frdaemon
 
 SOURCES = \
 	../src/frd.cpp \
-	../src/redis_client.cpp \
 	../src/person.cpp \
+	../src/redis_client.cpp \
 	../src/ftp_client.cpp \
+	../src/frame_features.cpp \
 	../src/redis-cplusplus-client/anet.c
 
 
