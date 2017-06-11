@@ -12,6 +12,9 @@
 #include <opencv2/opencv.hpp>
 
 /// contains samples for recognize person
+
+class PersoneQuery;
+
 class Person
 {
 public:
@@ -20,6 +23,8 @@ public:
 		: guid(guid)
 	{
 	}
+
+	Person(PersoneQuery & query);
 
 	/// serialization
 	Person(std::ifstream & f);
@@ -50,8 +55,9 @@ public:
 	~PersonSet();
 
 	void load_from_ftp(std::string const & ftp_url);
+	bool load_from_sql(std::string const & host, std::string const & db_name, std::string const & db_username, std::string const & db_password);
 
-	std::vector<std::shared_ptr<Person>> recognize( cv::Mat const & frame );
+	std::vector<std::shared_ptr<Person>> recognize(cv::Mat const & frame);
 
 public:
 

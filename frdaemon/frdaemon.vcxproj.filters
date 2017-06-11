@@ -36,6 +36,9 @@
     <ClInclude Include="src\redis-cplusplus-client\anet.h">
       <Filter>src\redis-cplusplus-client</Filter>
     </ClInclude>
+    <ClInclude Include="src\mssql_client.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="build_linux\Makefile">
@@ -63,6 +66,9 @@
     </ClCompile>
     <ClCompile Include="src\redis-cplusplus-client\anet.c">
       <Filter>src\redis-cplusplus-client</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mssql_client.cpp">
+      <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

@@ -6,6 +6,7 @@ SOURCES = \
 	../src/person.cpp \
 	../src/redis_client.cpp \
 	../src/ftp_client.cpp \
+	../src/mssql_client.cpp \
 	../src/frame_features.cpp \
 	../src/redis-cplusplus-client/anet.c
 
@@ -36,7 +37,8 @@ prepare:
 	apt-get install -y g++
 	apt-get install -y libboost-system-dev libboost-filesystem-dev 
 	apt-get install -y libcurl4-openssl-dev 
-	apt-get install -y libopencv-dev 
+	apt-get install -y libopencv-dev
+	apt-get install -y unixodbc-dev	 
 
 install:
 

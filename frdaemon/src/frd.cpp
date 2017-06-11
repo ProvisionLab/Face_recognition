@@ -170,7 +170,12 @@ int main(int argc, char** argv)
 
 			PersonSet persons;
 
-			persons.load_from_ftp(redis.config_ftp_url);
+			// 2do: change credentials
+			if (!persons.load_from_sql("localhost", "casino", "casino_user", "casino"))
+			{
+				// try load directly from ftp
+				persons.load_from_ftp(redis.config_ftp_url);
+			}
 
 			LOG(LOG_INFO, "start recognition...");
 

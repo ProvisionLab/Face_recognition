@@ -36,6 +36,9 @@
     <ClCompile Include="..\frdaemon\src\redis-cplusplus-client\anet_win32.c">
       <Filter>src\redis-cplusplus-client</Filter>
     </ClCompile>
+    <ClCompile Include="..\frdaemon\src\mssql_client.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\frdaemon\src\frame_features.hpp">
@@ -61,6 +64,9 @@
     </ClInclude>
     <ClInclude Include="..\frdaemon\src\redis-cplusplus-client\redisclient.h">
       <Filter>src\redis-cplusplus-client</Filter>
+    </ClInclude>
+    <ClInclude Include="..\frdaemon\src\mssql_client.hpp">
+      <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

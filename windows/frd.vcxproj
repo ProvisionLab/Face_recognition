@@ -157,6 +157,7 @@
     <ClCompile Include="..\frdaemon\src\frame_features.cpp" />
     <ClCompile Include="..\frdaemon\src\frd.cpp" />
     <ClCompile Include="..\frdaemon\src\ftp_client.cpp" />
+    <ClCompile Include="..\frdaemon\src\mssql_client.cpp" />
     <ClCompile Include="..\frdaemon\src\person.cpp" />
     <ClCompile Include="..\frdaemon\src\redis-cplusplus-client\anet_win32.c" />
     <ClCompile Include="..\frdaemon\src\redis_client.cpp" />
@@ -165,6 +166,7 @@
     <ClInclude Include="..\frdaemon\src\frame_features.hpp" />
     <ClInclude Include="..\frdaemon\src\ftp_client.hpp" />
     <ClInclude Include="..\frdaemon\src\log.h" />
+    <ClInclude Include="..\frdaemon\src\mssql_client.hpp" />
     <ClInclude Include="..\frdaemon\src\person.hpp" />
     <ClInclude Include="..\frdaemon\src\redis-cplusplus-client\anet_win32.h" />
     <ClInclude Include="..\frdaemon\src\redis-cplusplus-client\fmacros.h" />

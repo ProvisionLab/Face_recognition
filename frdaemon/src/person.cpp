@@ -9,6 +9,7 @@
 namespace fs = boost::filesystem;
 
 #include "frame_features.hpp"
+#include "mssql_client.hpp"
 
 #if !defined(USE_DAEMON) && defined(_DEBUG)
 
@@ -22,6 +23,11 @@ namespace fs = boost::filesystem;
 #endif
 
 extern std::atomic<bool> sig_term;
+
+Person::Person(PersoneQuery & query)
+{
+	guid = query.persone_resource_id;
+}
 
 Person::Person(std::ifstream & f)
 {
@@ -267,4 +273,22 @@ std::vector<std::shared_ptr<Person>> PersonSet::recognize(cv::Mat const & frame)
 	}
 
 	return found;
+}
+
+bool PersonSet::load_from_sql(std::string const & host, std::string const & db_name, std::string const & db_username, std::string const & db_password)
+{
+	SqlConnection conn;
+
+	if (!conn.connect(host, db_name, db_username, db_password))
+		return false;
+
+	PersoneQuery query(conn);
+
+	while (query.next())
+	{
+		persons.push_back(std::make_shared<Person>(query));
+	}
+
+	// 2do:
+	return false;
 }

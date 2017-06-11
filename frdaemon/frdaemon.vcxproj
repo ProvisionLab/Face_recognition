@@ -30,6 +30,7 @@
     <ClInclude Include="src\frame_features.hpp" />
     <ClInclude Include="src\ftp_client.hpp" />
     <ClInclude Include="src\log.h" />
+    <ClInclude Include="src\mssql_client.hpp" />
     <ClInclude Include="src\person.hpp" />
     <ClInclude Include="src\redis-cplusplus-client\anet.h" />
     <ClInclude Include="src\redis-cplusplus-client\fmacros.h" />
@@ -46,6 +47,7 @@
     <ClCompile Include="src\frame_features.cpp" />
     <ClCompile Include="src\frd.cpp" />
     <ClCompile Include="src\ftp_client.cpp" />
+    <ClCompile Include="src\mssql_client.cpp" />
     <ClCompile Include="src\person.cpp" />
     <ClCompile Include="src\redis-cplusplus-client\anet.c" />
     <ClCompile Include="src\redis_client.cpp" />
