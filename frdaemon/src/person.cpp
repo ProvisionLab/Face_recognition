@@ -277,7 +277,7 @@ std::vector<std::shared_ptr<Person>> PersonSet::recognize(cv::Mat const & frame)
 
 bool PersonSet::load_from_sql(std::string const & host, std::string const & db_name, std::string const & db_username, std::string const & db_password)
 {
-	SqlConnection conn;
+	ODBC::Connection conn;
 
 	if (!conn.connect(host, db_name, db_username, db_password))
 		return false;
@@ -289,6 +289,5 @@ bool PersonSet::load_from_sql(std::string const & host, std::string const & db_n
 		persons.push_back(std::make_shared<Person>(query));
 	}
 
-	// 2do:
-	return false;
+	return persons.size() > 0;
 }

@@ -1,26 +1,29 @@
 #include "mssql_client.hpp"
 
-
-SqlConnection::SqlConnection()
+PersoneQuery::PersoneQuery(ODBC::Connection & conn)
+	: conn(conn)
+	, stmt(conn)
 {
+	stmt.Prepare("SELECT id, FaceRecognitionResourceId, SampleUrl FROM FaceRecognitionSamples");
 
-}
+	SQLRETURN rc = stmt.Execute();
 
-bool SqlConnection::connect(std::string const & host, std::string const & db_name, std::string const & db_username, std::string const & db_password)
-{
-	// 2do:
-	return false;
-}
+	if (!SQL_SUCCEEDED(rc))
+		throw std::runtime_error(__FUNCTION__);
 
-
-
-PersoneQuery::PersoneQuery(SqlConnection & conn)
-{
-	// 2do:
+	stmt.Bind(1, persone_id);
+	stmt.Bind(2, persone_resource_id);
 }
 
 bool PersoneQuery::next()
 {
-	// 2do:
-	return false;
+	if (!stmt.Fetch())
+		return false;
+
+	stmt.get_data(3, persone_sample_url);
+
+
+	//ODBC::Stmt stmt_res(conn);
+
+	return true;
 }

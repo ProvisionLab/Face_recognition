@@ -171,11 +171,24 @@ int main(int argc, char** argv)
 			PersonSet persons;
 
 			// 2do: change credentials
-			if (!persons.load_from_sql("localhost", "casino", "casino_user", "casino"))
+
+#ifdef _WIN32
+			if (!persons.load_from_sql("(localdb)\\MSSQLLocalDB", "casino", "casino_user", "casino"))
 			{
+				LOG(LOG_ERR, "no sql connection");
+
 				// try load directly from ftp
 				persons.load_from_ftp(redis.config_ftp_url);
 			}
+#else
+			if (!persons.load_from_sql("UNICORN", "casino", "casino_user", "casino"))
+			{
+				LOG(LOG_ERR, "no sql connection");
+				return 0;
+			}
+#endif
+
+			LOG(LOG_INFO, persons.persons.size() << " persons found");
 
 			LOG(LOG_INFO, "start recognition...");
 
@@ -184,6 +197,9 @@ int main(int argc, char** argv)
 		catch (std::exception const & e)
 		{
 			LOG(LOG_ERR, "error: " << e.what());
+#ifndef _WIN32	// 2do: temporary
+			return 0;
+#endif
 		}
 
 		if (sig_term)

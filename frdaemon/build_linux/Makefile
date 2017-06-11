@@ -4,10 +4,11 @@ TARGET = frdaemon
 SOURCES = \
 	../src/frd.cpp \
 	../src/person.cpp \
-	../src/redis_client.cpp \
+	../src/frame_features.cpp \
 	../src/ftp_client.cpp \
 	../src/mssql_client.cpp \
-	../src/frame_features.cpp \
+	../src/odbcxx/odbcxx.cpp \
+	../src/redis_client.cpp \
 	../src/redis-cplusplus-client/anet.c
 
 
@@ -22,6 +23,7 @@ LIBS 		+= -lpthread
 LIBS 		+= -lboost_system -lboost_filesystem
 LIBS 		+= -lcurl
 LIBS 		+= -lopencv_core -lopencv_imgproc -lopencv_video -lopencv_highgui
+LIBS 		+= -lodbc
 
 all: 	$(TARGET)
 
@@ -38,7 +40,11 @@ prepare:
 	apt-get install -y libboost-system-dev libboost-filesystem-dev 
 	apt-get install -y libcurl4-openssl-dev 
 	apt-get install -y libopencv-dev
-	apt-get install -y unixodbc-dev	 
+
+	apt-get install -y unixodbc-dev	tdsodbc
+
+	# 2do: this must be called only once
+	odbcinst -i -d -f /usr/share/tdsodbc/odbcinst.ini
 
 install:
 

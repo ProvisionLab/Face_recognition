@@ -1,32 +1,27 @@
 #pragma once
 
-#include <string>
+#include "odbcxx/odbcxx.hpp"
 #include <vector>
-
-class SqlConnection
-{
-public:
-
-	SqlConnection();
-
-	bool connect(std::string const & host, std::string const & db_name, std::string const & db_username, std::string const & db_password);
-
-};
-
 
 class PersoneQuery
 {
 public:
 
-	PersoneQuery(SqlConnection &conn);
+	PersoneQuery(ODBC::Connection &conn);
 
 	bool next();
 
 public:
 
-	int	persone_id;
-	std::string	persone_resource_id;
+	int	persone_id = 0;
+	int	persone_resource_id = 0;
+	std::string		persone_sample_url;
 
 	std::vector<float>	key_features;
 	int	solution_version;
+
+private:
+
+	ODBC::Connection & conn;
+	ODBC::Stmt stmt;
 };

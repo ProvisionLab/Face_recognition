@@ -10,6 +10,9 @@
     <Filter Include="src\redis-cplusplus-client">
       <UniqueIdentifier>{65cae8c0-7b66-4415-86f7-07fe2d0308bc}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\odbcxx">
+      <UniqueIdentifier>{42b684d3-7893-407e-aff0-33c243f80e85}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\frame_features.hpp">
@@ -38,6 +41,9 @@
     </ClInclude>
     <ClInclude Include="src\mssql_client.hpp">
       <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\odbcxx\odbcxx.hpp">
+      <Filter>src\odbcxx</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -69,6 +75,9 @@
     </ClCompile>
     <ClCompile Include="src\mssql_client.cpp">
       <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\odbcxx\odbcxx.cpp">
+      <Filter>src\odbcxx</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
