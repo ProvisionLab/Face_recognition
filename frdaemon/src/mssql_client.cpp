@@ -1,29 +1,54 @@
 #include "mssql_client.hpp"
 
-PersoneQuery::PersoneQuery(ODBC::Connection & conn)
-	: conn(conn)
-	, stmt(conn)
+DbPersonQuery::DbPersonQuery(ODBC::Connection & conn)
+	: ODBC::Stmt(conn)
 {
-	stmt.Prepare("SELECT id, FaceRecognitionResourceId, SampleUrl FROM FaceRecognitionSamples");
+	Prepare("SELECT A.Id, SolutionVersion, KeyFeatures FROM Person AS A LEFT JOIN FaceRecognitionSamples AS B ON A.Id = B.Id");
 
-	SQLRETURN rc = stmt.Execute();
-
-	if (!SQL_SUCCEEDED(rc))
-		throw std::runtime_error(__FUNCTION__);
-
-	stmt.Bind(1, persone_id);
-	stmt.Bind(2, persone_resource_id);
+	Execute();
 }
 
-bool PersoneQuery::next()
+bool DbPersonQuery::next()
 {
-	if (!stmt.Fetch())
+	if (!Fetch())
 		return false;
 
-	stmt.get_data(3, persone_sample_url);
+	get_data(1, persone_id);
 
+	if (!get_data(2, solution_version))
+		solution_version = -1;
 
-	//ODBC::Stmt stmt_res(conn);
+	get_data(3, key_features);
 
 	return true;
+}
+
+DbPersonInsertSample::DbPersonInsertSample(ODBC::Connection &conn)
+	: ODBC::Stmt(conn)
+{
+	Prepare("INSERT INTO FaceRecognitionSamples (Id, KeyFeatures, SolutionVersion) VALUES (?,?,?)");
+}
+
+void DbPersonInsertSample::execute(std::string const & id, std::string const & key_features, long solution_version)
+{
+	BindI(1, id);
+	BindI(2, key_features);
+	BindI(3, solution_version);
+
+	Execute();
+}
+
+DbPersonUpdateSample::DbPersonUpdateSample(ODBC::Connection &conn)
+	: ODBC::Stmt(conn)
+{
+	Prepare("UPDATE FaceRecognitionSamples SET KeyFeatures=?, SolutionVersion=? WHERE Id=?");
+}
+
+void DbPersonUpdateSample::execute(std::string const & id, std::string const & key_features, long solution_version)
+{
+	BindI(1, key_features);
+	BindI(2, solution_version);
+	BindI(3, id);
+
+	Execute();
 }

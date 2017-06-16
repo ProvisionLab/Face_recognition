@@ -4,7 +4,8 @@
 #include <vector>
 
 #include <opencv2/opencv.hpp>
-#include "person.hpp"
+
+#define SOLUTION_VERSION	1
 
 class FrameFeatures
 {
@@ -12,17 +13,13 @@ public:
 
 	FrameFeatures();
 
-	void generate(cv::Mat const & m);
+	void generate_features(cv::Mat const & m);
 
-	bool contains_person(Person const & person);
+	bool contains_person(std::list<std::vector<float>> const & person_features);
 
 private:
 
 	std::list<std::vector<float>>	features;
 };
 
-
-
-
-
-
+std::vector<float> generate_features_for_sample(cv::Mat const & sample);

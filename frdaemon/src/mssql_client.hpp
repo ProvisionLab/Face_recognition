@@ -3,25 +3,41 @@
 #include "odbcxx/odbcxx.hpp"
 #include <vector>
 
-class PersoneQuery
+class DbPersonQuery
+	: protected ODBC::Stmt
 {
 public:
 
-	PersoneQuery(ODBC::Connection &conn);
+	DbPersonQuery(ODBC::Connection &conn);
 
 	bool next();
 
 public:
 
-	int	persone_id = 0;
-	int	persone_resource_id = 0;
-	std::string		persone_sample_url;
-
-	std::vector<float>	key_features;
-	int	solution_version;
+	std::string		persone_id;
+	std::string		key_features;
+	long solution_version = 0;
 
 private:
 
-	ODBC::Connection & conn;
-	ODBC::Stmt stmt;
+};
+
+class DbPersonInsertSample 
+	: protected ODBC::Stmt
+{
+public:
+
+	DbPersonInsertSample(ODBC::Connection &conn);
+
+	void execute(std::string const & id, std::string const & key_features, long solution_version);
+};
+
+class DbPersonUpdateSample
+	: protected ODBC::Stmt
+{
+public:
+
+	DbPersonUpdateSample(ODBC::Connection &conn);
+
+	void execute(std::string const & id, std::string const & key_features, long solution_version);
 };

@@ -168,6 +168,15 @@ namespace ODBC {
 		std::shared_ptr<Environment> env;
 	};
 
+	template <typename _Tx>
+	class BindValue
+	{
+	public:
+	private:
+
+		_Tx * value = nullptr;
+	};
+
 	class Stmt
 		: public Handle<SQL_HANDLE_STMT, SQL_HANDLE_DBC>
 	{
@@ -203,6 +212,28 @@ namespace ODBC {
 			return true;// SQL_SUCCEEDED(rc);// != SQL_NO_DATA;
 		}
 
+		void BindI(int index, long const & input)
+		{
+			throw_on_error(SQLBindParameter(get(), index, SQL_PARAM_INPUT,
+				SQL_C_LONG, SQL_INTEGER, 0, 0, const_cast<long*>(&input), 0, NULL));
+		}
+
+		void BindI(int index, std::string const & input)
+		{
+			size_t buflen = input.size() + 1;
+
+			if (!input.empty())
+			{
+				throw_on_error(SQLBindParameter(get(), index, SQL_PARAM_INPUT,
+					SQL_C_CHAR, SQL_VARCHAR, input.size(), 0, const_cast<char*>(input.c_str()), buflen, NULL));
+			}
+			else
+			{
+				throw_on_error(SQLBindParameter(get(), index, SQL_PARAM_INPUT,
+					SQL_C_CHAR, SQL_VARCHAR, 1, 0, NULL, 0, NULL));
+			}
+		}
+
 		void Bind(int index, int c_type, void * pData, int nSize, SQLLEN * outLen)
 		{
 			throw_on_error(SQLBindCol(get(), index, c_type, pData, nSize, outLen));
@@ -213,49 +244,60 @@ namespace ODBC {
 			return Bind(index, SQL_C_LONG, &value, 0, NULL);
 		}
 
-		void Bind(int index, std::string & value)
+		void Bind(int index, std::string & value, size_t max_size)
 		{
 
 		}
 
-		void get_data(int index, std::string & output)
+		bool get_data(int index, long & output)
 		{
 			SQLLEN len;
-			throw_on_error(SQLGetData(get(), index, SQL_C_CHAR, (void*)-1, 0, &len));
+			throw_on_error(SQLGetData(get(), index, SQL_C_LONG, &output, sizeof(output), &len));
+			return len != SQL_NULL_DATA;
+		}
+
+		bool get_data(int index, std::string & output)
+		{
+			SQLLEN len;
+
+			char buf[16];
+			throw_on_error(SQLGetData(get(), index, SQL_C_CHAR, (char*)buf, sizeof(buf), &len));
 
 			output.clear();
 
 			if (len == SQL_NULL_DATA)
-				return;
+			{
+				output.clear();
+				return false;
+			}
+
+			if (len != SQL_NO_TOTAL)
+			{
+				output.assign(buf, len-1);
+				return true;
+			}
+
+			output.assign(buf, sizeof(buf)*sizeof(char)-1);
 
 			while (true)
 			{
-				size_t nLen = output.size();
-				if (len == SQL_NO_TOTAL)
-					len = (nLen + nLen / 2 + 16) * sizeof(char);
+				size_t start = output.size();
 
-				output.resize(len / sizeof(char) + 1);
-				SQLLEN buflen = (output.size() - nLen) * sizeof(char);
+				output.resize(start + start / 2 + 16);
+				SQLLEN bufSize = (output.size() - start) * sizeof(char);
 
-				throw_on_error(SQLGetData(get(), index, SQL_C_CHAR, (char*)output.data() + nLen, buflen, &len));
+				throw_on_error(SQLGetData(get(), index, SQL_C_CHAR, (char*)output.data() + start, bufSize, &len));
 
 				if (len > 0)
 				{
-					if (len <= buflen)
-					{
-						output.resize(len / sizeof(char) + nLen);
-						break;
-					}
-
-					len += nLen * sizeof(char);
+					output.resize(start + len);
+					break;
 				}
 
-				if (output[buflen-1] == '\0')
-					--buflen;
-
-				nLen += buflen / sizeof(char);
-				output.resize(nLen);
+				output.pop_back();
 			}
+
+			return true;
 		}
 	}; // class Stmt
 

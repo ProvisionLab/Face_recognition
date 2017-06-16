@@ -173,15 +173,13 @@ int main(int argc, char** argv)
 			// 2do: change credentials
 
 #ifdef _WIN32
-			if (!persons.load_from_sql("(localdb)\\MSSQLLocalDB", "casino", "casino_user", "casino"))
+			if (!persons.load_from_sql("(localdb)\\MSSQLLocalDB", "casino", "casino_user", "casino", redis.config_ftp_url))
 			{
 				LOG(LOG_ERR, "no sql connection");
-
-				// try load directly from ftp
-				persons.load_from_ftp(redis.config_ftp_url);
+				return 0;
 			}
 #else
-			if (!persons.load_from_sql("UNICORN", "casino", "casino_user", "casino"))
+			if (!persons.load_from_sql("UNICORN", "casino", "casino_user", "casino", redis.config_ftp_url))
 			{
 				LOG(LOG_ERR, "no sql connection");
 				return 0;
