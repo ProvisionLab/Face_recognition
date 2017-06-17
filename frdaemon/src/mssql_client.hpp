@@ -3,6 +3,8 @@
 #include "odbcxx/odbcxx.hpp"
 #include <vector>
 
+#define USE_SAMPLES_IN_TWO_TABLES 1
+
 class DbPersonQuery
 	: protected ODBC::Stmt
 {
@@ -14,7 +16,8 @@ public:
 
 public:
 
-	std::string		persone_id;
+	ODBC::UUID		persone_id;
+	std::string		sample_url;
 	std::string		key_features;
 	long solution_version = 0;
 
@@ -29,7 +32,7 @@ public:
 
 	DbPersonInsertSample(ODBC::Connection &conn);
 
-	void execute(std::string const & id, std::string const & key_features, long solution_version);
+	void execute(ODBC::UUID person_id, std::string const & sample_url, std::string const & key_features, long solution_version);
 };
 
 class DbPersonUpdateSample
@@ -39,7 +42,7 @@ public:
 
 	DbPersonUpdateSample(ODBC::Connection &conn);
 
-	void execute(std::string const & id, std::string const & key_features, long solution_version);
+	void execute(ODBC::UUID person_id, std::string const & key_features, long solution_version);
 };
 
 class DbPersonInsertLog

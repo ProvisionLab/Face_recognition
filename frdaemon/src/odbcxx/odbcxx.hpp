@@ -14,7 +14,22 @@
 //#include <stdexcept>
 #include <vector>
 
+#ifndef USE_FREETDS
+#define USE_FREETDS	1
+#endif
+
+#ifndef _WIN32
+#include <uuid/uuid.h>
+#endif
+
 namespace ODBC {
+
+
+#ifndef _WIN32
+	typedef uuid_t	UUID;
+#else
+	typedef unsigned char UUID[16];
+#endif
 
 	template <int, int>
 	class Handle;
@@ -218,6 +233,12 @@ namespace ODBC {
 				SQL_C_LONG, SQL_INTEGER, 0, 0, const_cast<long*>(&input), 0, NULL));
 		}
 
+		void BindUuidI(int index, UUID input)
+		{
+			throw_on_error(SQLBindParameter(get(), index, SQL_PARAM_INPUT,
+				SQL_C_GUID, SQL_GUID, 0, 0, input, 0, NULL));
+		}
+
 		void BindI(int index, std::string const & input)
 		{
 			size_t buflen = input.size() + 1;
@@ -249,14 +270,21 @@ namespace ODBC {
 
 		}
 
-		bool get_data(int index, long & output)
+		bool get_column(int index, long & output)
 		{
 			SQLLEN len;
 			throw_on_error(SQLGetData(get(), index, SQL_C_LONG, &output, sizeof(output), &len));
 			return len != SQL_NULL_DATA;
 		}
 
-		bool get_data(int index, std::string & output)
+		bool get_uuid_column(int index, UUID output)
+		{
+			SQLLEN len;
+			throw_on_error(SQLGetData(get(), index, SQL_C_GUID, output, sizeof(UUID), &len));
+			return len != SQL_NULL_DATA;
+		}
+
+		bool get_column(int index, std::string & output)
 		{
 			SQLLEN len;
 
@@ -273,7 +301,21 @@ namespace ODBC {
 
 			if (len != SQL_NO_TOTAL)
 			{
-				output.assign(buf, len-1);
+				auto start = sizeof(buf)/sizeof(char) - 1;
+
+				output.reserve(len + 1);
+
+				if (len > (SQLLEN)start)
+				{
+					output.assign(buf, start);
+					output.resize(len + 1);
+					throw_on_error(SQLGetData(get(), index, SQL_C_CHAR, (char*)output.data() + start, (output.size()-start) * sizeof(char), &len));
+					output.resize(start + len);
+				}
+				else
+				{
+					output.assign(buf, len);
+				}
 				return true;
 			}
 
@@ -299,6 +341,7 @@ namespace ODBC {
 
 			return true;
 		}
+
 	}; // class Stmt
 
 } // namespace ODBC

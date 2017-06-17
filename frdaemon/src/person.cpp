@@ -28,9 +28,10 @@ namespace fs = boost::filesystem;
 
 extern std::atomic<bool> sig_term;
 
-Person::Person(std::string const & guid, std::string const & features_json)
-	: guid(guid)
+Person::Person(unsigned char uuid[16], std::string const & sample_url, std::string const & features_json)
+	: sample_url(sample_url)
 {
+	memcpy(person_id, uuid, sizeof(person_id));
 	set_features_json(features_json);
 }
 
@@ -115,7 +116,7 @@ size_t Person::get_memory_usage()
 {
 	size_t sz = sizeof(Person);
 
-	sz += guid.size();
+	//sz += guid.size();
 
 	// 2do:
 	//sz += features.size() * sizeof(float);
@@ -188,7 +189,7 @@ void PersonSet::load_from_ftp(std::string const & ftp_url)
 	{
 		LOG_DEBUG("person guid: " << guid << std::endl);
 
-		Person person(guid, "");
+		Person person({}, guid, "");
 
 		auto files = ftp.get_list(guid);
 		for (auto & fn : files)
@@ -262,14 +263,14 @@ bool PersonSet::load_from_sql(
 		std::list<std::shared_ptr<Person>>	insert_list;
 		std::list<std::shared_ptr<Person>>	update_list;
 
+		int p_count = 0;
 		if (true)
 		{
 			DbPersonQuery query(m_sql_conn);
 
 			while (query.next())
 			{
-				if (query.persone_id.empty())
-					continue;
+				++p_count;
 
 				// check if person have samples
 
@@ -280,21 +281,31 @@ bool PersonSet::load_from_sql(
 						auto person_list = ftp.get_list("");
 
 						for (auto & p : person_list)
+						{
+#ifdef _DEBUG
+							LOG_DEBUG("ftp samples for person " << p << "\n");
+#endif
 							ftp_persons.insert(p);
+						}
 
 						ftp_access = true;
 					}
 
-					if (ftp_persons.find(query.persone_id) == ftp_persons.cend())
+					if (ftp_persons.find(query.sample_url) == ftp_persons.cend())
+					{
+#ifdef _DEBUG
+						LOG_DEBUG("person " << query.sample_url << " has not samples\n");
+#endif
 						continue;
+					}
 
 					// old features, generate new
 
-					auto files = ftp.get_files(query.persone_id);
+					auto files = ftp.get_files(query.sample_url);
 					if (files.empty())
 						continue;
 
-					auto person = std::make_shared<Person>(query.persone_id, "");
+					auto person = std::make_shared<Person>(query.persone_id, query.sample_url, "");
 
 					for (auto & fdata : files)
 					{
@@ -315,11 +326,11 @@ bool PersonSet::load_from_sql(
 				}
 				else
 				{
-					auto person = std::make_shared<Person>(query.persone_id, query.key_features);
+					auto person = std::make_shared<Person>(query.persone_id, query.sample_url, query.key_features);
 					if (person->features.empty())
 						continue;
 
-					LOG_DEBUG("person " << person->guid << " samples loaded\n");
+					LOG_DEBUG("person " << person->sample_url << " samples loaded\n");
 
 					persons.push_back(person);
 				}
@@ -330,26 +341,27 @@ bool PersonSet::load_from_sql(
 
 		for (auto & person : insert_list)
 		{
-			LOG_DEBUG("person " << person->guid << " samples created\n");
+			LOG_DEBUG("person " << person->sample_url << " samples created\n");
 
 			// insert recors
 
 			DbPersonInsertSample q(m_sql_conn);
-			q.execute(person->guid, person->get_features_json(), SOLUTION_VERSION);
+			q.execute(person->person_id, person->sample_url, person->get_features_json(), SOLUTION_VERSION);
 		}
 
 		for (auto & person : update_list)
 		{
-			LOG_DEBUG("person " << person->guid << " samples updated\n");
+			LOG_DEBUG("person " << person->sample_url << " samples updated\n");
 
 			// update record
 			DbPersonUpdateSample q(m_sql_conn);
-			q.execute(person->guid, person->get_features_json(), SOLUTION_VERSION);
+			q.execute(person->person_id, person->get_features_json(), SOLUTION_VERSION);
 		}
 
-//		LOG_DEBUG("total " << persons.size() << " persons loaded\n");
+		LOG_DEBUG("total " << p_count << " persons checked\n");
+//		LOG_DEBUG(persons.size() << " persons loaded\n");
 
-		return persons.size() > 0;
+		return true;
 	}
 	catch ( ODBC::Exception const & e )
 	{

@@ -102,12 +102,12 @@ void recognize(PersonSet & persons, RedisClient & redis)
 
 		for (auto & person : ps)
 		{
-			redis.person_found(person->guid);
+			redis.person_found(person->sample_url);
 
 #if STORE_RECOGNIZED_TO_LOGS
-			persons.store_id_to_sql_log(0, person->guid);
+			persons.store_id_to_sql_log(0, person->sample_url);
 #endif
-			std::cout << person->guid << std::endl;
+			std::cout << person->sample_url << std::endl;
 		}
 
 		l.lock();
@@ -239,7 +239,13 @@ int main(int argc, char** argv)
 				return 0;
 			}
 
-			LOG(LOG_INFO, "total " << persons.persons.size() << " persons loaded");
+			LOG(LOG_INFO, persons.persons.size() << " persons loaded");
+
+			if (persons.persons.empty())
+			{
+				LOG(LOG_INFO, "no person for recognition");
+				return 0;
+			}
 
 			LOG(LOG_INFO, "start recognition...");
 

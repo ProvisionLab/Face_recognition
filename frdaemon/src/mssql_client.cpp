@@ -1,9 +1,17 @@
 #include "mssql_client.hpp"
 
+
 DbPersonQuery::DbPersonQuery(ODBC::Connection & conn)
 	: ODBC::Stmt(conn)
 {
-	Prepare("SELECT A.Id, SolutionVersion, KeyFeatures FROM casino.Persons AS A LEFT JOIN casino.FaceRecognitionSamples AS B ON A.Id = B.Id");
+	//CONVERT(nchar(36), A.Id)
+#if USE_SAMPLES_IN_TWO_TABLES
+	Prepare("SELECT A.Id, C.SolutionVersion, C.KeyFeatures, CONVERT(nchar(36),A.Id) FROM casino.Persons AS A "
+		"LEFT JOIN casino.FaceRecognitionSamples AS B ON A.Id = B.Id "
+		"LEFT JOIN casino.FaceRecognitionResources AS C ON B.FaceRecognitionResourceId = C.Id");
+#else
+	Prepare("SELECT CONVERT(nchar(36),A.Id), SolutionVersion, KeyFeatures FROM casino.Persons AS A LEFT JOIN casino.FaceRecognitionSamples AS B ON A.Id = B.Id");
+#endif
 
 	Execute();
 }
@@ -13,12 +21,14 @@ bool DbPersonQuery::next()
 	if (!Fetch())
 		return false;
 
-	get_data(1, persone_id);
+	get_uuid_column(1, persone_id);
 
-	if (!get_data(2, solution_version))
+	if (!get_column(2, solution_version))
 		solution_version = -1;
 
-	get_data(3, key_features);
+	get_column(3, key_features);
+
+	get_column(4, sample_url);
 
 	return true;
 }
@@ -26,14 +36,21 @@ bool DbPersonQuery::next()
 DbPersonInsertSample::DbPersonInsertSample(ODBC::Connection &conn)
 	: ODBC::Stmt(conn)
 {
+#if USE_SAMPLES_IN_TWO_TABLES
+	Prepare("INSERT INTO casino.FaceRecognitionResources (KeyFeatures,SolutionVersion)"
+		" OUTPUT ?, INSERTED.Id, ? INTO casino.FaceRecognitionSamples(Id, FaceRecognitionResourceId, SampleUrl)"
+		" VALUES(?,?)");
+#else
 	Prepare("INSERT INTO casino.FaceRecognitionSamples (Id, KeyFeatures, SolutionVersion) VALUES (?,?,?)");
+#endif
 }
 
-void DbPersonInsertSample::execute(std::string const & id, std::string const & key_features, long solution_version)
+void DbPersonInsertSample::execute(ODBC::UUID person_id, std::string const & sample_url, std::string const & key_features, long solution_version)
 {
-	BindI(1, id);
-	BindI(2, key_features);
-	BindI(3, solution_version);
+	BindUuidI(1, person_id);
+	BindI(2, sample_url);
+	BindI(3, key_features);
+	BindI(4, solution_version);
 
 	Execute();
 }
@@ -41,14 +58,20 @@ void DbPersonInsertSample::execute(std::string const & id, std::string const & k
 DbPersonUpdateSample::DbPersonUpdateSample(ODBC::Connection &conn)
 	: ODBC::Stmt(conn)
 {
+#if USE_SAMPLES_IN_TWO_TABLES
+	Prepare("UPDATE C SET C.KeyFeatures=?, C.SolutionVersion=?"
+		" FROM casino.FaceRecognitionSamples AS B INNER JOIN casino.FaceRecognitionResources AS C ON FaceRecognitionResourceId = C.Id"
+		" WHERE B.Id=?");
+#else
 	Prepare("UPDATE casino.FaceRecognitionSamples SET KeyFeatures=?, SolutionVersion=? WHERE Id=?");
+#endif
 }
 
-void DbPersonUpdateSample::execute(std::string const & id, std::string const & key_features, long solution_version)
+void DbPersonUpdateSample::execute(ODBC::UUID person_id, std::string const & key_features, long solution_version)
 {
 	BindI(1, key_features);
 	BindI(2, solution_version);
-	BindI(3, id);
+	BindUuidI(3, person_id);
 
 	Execute();
 }

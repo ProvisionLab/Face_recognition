@@ -19,7 +19,7 @@ class Person
 {
 public:
 
-	Person(std::string const & guid, std::string const & features_json);
+	Person(unsigned char uuid[16], std::string const & sample_url, std::string const & features_json);
 
 	void create_features(std::vector<uint8_t> const & fdata);
 
@@ -30,7 +30,8 @@ public:
 
 public:
 
-	std::string	guid;
+	unsigned char	person_id[16];
+	std::string		sample_url;
 
 	std::list<std::vector<float>>	features;
 

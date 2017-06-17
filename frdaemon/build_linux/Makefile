@@ -19,7 +19,7 @@ SOURCES = \
 CPPFLAGS 	= -std=c++14 -D_DEFAULT_SOURCE 
 
 ifdef DEBUG
-CPPFLAGS 	+= -D_DEBUG -O0 -ggdb -Wall -g
+CPPFLAGS 	+= -D_DEBUG -Og -ggdb -Wall -g
 endif
 
 #CPPFLAGS 	+= -DUSE_DAEMON
@@ -29,6 +29,7 @@ LIBS 		+= -lboost_system -lboost_filesystem
 LIBS 		+= -lcurl
 LIBS 		+= -lopencv_core -lopencv_imgproc -lopencv_video -lopencv_highgui
 LIBS 		+= -lodbc
+LIBS 		+= -luuid
 
 all: 	$(TARGET)
 
@@ -45,6 +46,7 @@ prepare:
 	apt-get install -y libboost-system-dev libboost-filesystem-dev 
 	apt-get install -y libcurl4-openssl-dev 
 	apt-get install -y libopencv-dev
+	apt-get install -y uuid-dev
 
 	apt-get install -y unixodbc-dev	tdsodbc
 

@@ -111,16 +111,17 @@ namespace ODBC {
 
 		strConnect += "SERVER=" + db_host + ";";
 		strConnect += "Database=" + db_name + ";";
-#else
-		std::string strConnect("DRIVER={FreeTDS};");// TDS_Version = 8.0; ");
+#elif USE_FREETDS
+//		std::string strConnect("DRIVER={FreeTDS};");
+		std::string strConnect("DRIVER={FreeTDS};TDS_Version=8.0;PORT=1433;");
 
 		strConnect += "SERVER=" + db_host + ";";
-		strConnect += "PORT=1433;";
-//		strConnect += "DataSource=" + db_host + ";";
 		strConnect += "Database=" + db_name + ";";
-//		strConnect += "InitialCatalog=" + db_name + ";";
-#endif
+#else
 
+#error "no unix odbc drivers selected"
+
+#endif
 
 		if (!db_username.empty())
 			strConnect += "UID=" + db_username + ";";
