@@ -2,7 +2,6 @@
 
 #include "ftp_client.hpp"
 #include "frame_features.hpp"
-#include "mssql_client.hpp"
 
 #include <thread>
 #include <mutex>
@@ -13,13 +12,7 @@
 #include <boost/filesystem.hpp>
 namespace fs = boost::filesystem;
 
-#include <boost/property_tree/ptree.hpp>
-#include <boost/property_tree/json_parser.hpp>
-namespace pt = boost::property_tree;
-
-//#include "rapidjson/rapidjson.h"
 #include "rapidjson/document.h"
-//#include "rapidjson/stringbuffer.h"
 #include "rapidjson/writer.h"
 
 #if !defined(USE_DAEMON) && defined(_DEBUG)
@@ -129,6 +122,7 @@ size_t Person::get_memory_usage()
 
 	return sz;
 }
+
 
 PersonSet::PersonSet()
 {
@@ -253,104 +247,124 @@ bool PersonSet::load_from_sql(
 	std::string const & db_password,
 	std::string const & ftp_url)
 {
-	ODBC::Connection conn;
-
-	if (!conn.connect(host, db_name, db_username, db_password))
-		return false;
-
-	FtpClient ftp;
-	ftp.ftp_url = ftp_url;
-
-	bool ftp_access = false;
-	std::set<std::string>	ftp_persons;
-
-	std::list<std::shared_ptr<Person>>	insert_list;
-	std::list<std::shared_ptr<Person>>	update_list;
-
-	if (true)
+	try
 	{
-		DbPersonQuery query(conn);
 
-		while (query.next())
+		if (!m_sql_conn.connect(host, db_name, db_username, db_password))
+			return false;
+
+		FtpClient ftp;
+		ftp.ftp_url = ftp_url;
+
+		bool ftp_access = false;
+		std::set<std::string>	ftp_persons;
+
+		std::list<std::shared_ptr<Person>>	insert_list;
+		std::list<std::shared_ptr<Person>>	update_list;
+
+		if (true)
 		{
-			if (query.persone_id.empty())
-				continue;
+			DbPersonQuery query(m_sql_conn);
 
-			// check if person have samples
-
-			if (query.solution_version != SOLUTION_VERSION)
+			while (query.next())
 			{
-				if (!ftp_access)
+				if (query.persone_id.empty())
+					continue;
+
+				// check if person have samples
+
+				if (query.solution_version != SOLUTION_VERSION)
 				{
-					auto person_list = ftp.get_list("");
+					if (!ftp_access)
+					{
+						auto person_list = ftp.get_list("");
 
-					for (auto & p : person_list)
-						ftp_persons.insert(p);
+						for (auto & p : person_list)
+							ftp_persons.insert(p);
 
-					ftp_access = true;
+						ftp_access = true;
+					}
+
+					if (ftp_persons.find(query.persone_id) == ftp_persons.cend())
+						continue;
+
+					// old features, generate new
+
+					auto files = ftp.get_files(query.persone_id);
+					if (files.empty())
+						continue;
+
+					auto person = std::make_shared<Person>(query.persone_id, "");
+
+					for (auto & fdata : files)
+					{
+						person->create_features(fdata);
+					}
+
+					if (person->features.empty())
+						continue;
+
+					if (query.solution_version < 0)
+						insert_list.push_back(person);
+					else
+						update_list.push_back(person);
+
+					person->version = query.solution_version;
+
+					persons.push_back(person);
 				}
-
-				if (ftp_persons.find(query.persone_id) == ftp_persons.cend())
-					continue;
-
-				// old features, generate new
-
-				auto files = ftp.get_files(query.persone_id);
-				if (files.empty())
-					continue;
-
-				auto person = std::make_shared<Person>(query.persone_id, "");
-
-				for (auto & fdata : files)
-				{
-					person->create_features(fdata);
-				}
-
-				if (person->features.empty())
-					continue;
-
-				if (query.solution_version < 0)
-					insert_list.push_back(person);
 				else
-					update_list.push_back(person);
+				{
+					auto person = std::make_shared<Person>(query.persone_id, query.key_features);
+					if (person->features.empty())
+						continue;
 
-				person->version = query.solution_version;
+					LOG_DEBUG("person " << person->guid << " samples loaded\n");
 
-				persons.push_back(person);
-			}
-			else
-			{
-				auto person = std::make_shared<Person>(query.persone_id, query.key_features);
-				if (person->features.empty())
-					continue;
-
-				persons.push_back(person);
+					persons.push_back(person);
+				}
 			}
 		}
+
+		// store new results
+
+		for (auto & person : insert_list)
+		{
+			LOG_DEBUG("person " << person->guid << " samples created\n");
+
+			// insert recors
+
+			DbPersonInsertSample q(m_sql_conn);
+			q.execute(person->guid, person->get_features_json(), SOLUTION_VERSION);
+		}
+
+		for (auto & person : update_list)
+		{
+			LOG_DEBUG("person " << person->guid << " samples updated\n");
+
+			// update record
+			DbPersonUpdateSample q(m_sql_conn);
+			q.execute(person->guid, person->get_features_json(), SOLUTION_VERSION);
+		}
+
+//		LOG_DEBUG("total " << persons.size() << " persons loaded\n");
+
+		return persons.size() > 0;
 	}
-
-	// store new results
-
-	for (auto & person : insert_list)
+	catch ( ODBC::Exception const & e )
 	{
-		LOG_DEBUG("person " << person->guid << " features created\n");
+		for (auto & m : e.messages)
+		{
+			LOG_DEBUG(m);
+		}
 
-		// insert recors
-
-		DbPersonInsertSample q(conn);
-		q.execute(person->guid, person->get_features_json(), SOLUTION_VERSION);
+		throw std::runtime_error("sql database");
 	}
+}
 
-	for (auto & person : update_list)
-	{
-		LOG_DEBUG("person " << person->guid << " features updated\n");
+void PersonSet::store_id_to_sql_log(int camera_id, std::string const & person_id)
+{
+	DbPersonInsertLog q(m_sql_conn);
 
-		// update record
-		DbPersonUpdateSample q(conn);
-		q.execute(person->guid, person->get_features_json(), SOLUTION_VERSION);
-	}
-
-	LOG_DEBUG("total " << persons.size() << " persons loaded\n");
-
-	return persons.size() > 0;
+	q.execute(camera_id, person_id);
 }

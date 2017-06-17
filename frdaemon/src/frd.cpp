@@ -1,11 +1,24 @@
 
-#include "person.hpp"
 #include "redis_client.hpp"
+#include "person.hpp"
+
 #include <thread>
+#include <mutex>
+#include <condition_variable>
 #include <atomic>
 #include <csignal>
 
 #include "log.h"
+
+#define STORE_RECOGNIZED_TO_LOGS 0
+
+#ifdef _WIN32
+static const std::string config_db_username = "casino_user";
+static const std::string config_db_password = "casino";
+#else
+static const std::string config_db_username = "sa";
+static const std::string config_db_password = "Admin123!";
+#endif
 
 std::atomic<bool>	sig_term(false);
 std::atomic<bool>	sig_hup(false);
@@ -14,48 +27,93 @@ const int config_person_recognition_period = 5; // 5 seconds
 
 void recognize(PersonSet & persons, RedisClient & redis)
 {
-	// open camera
+	std::list<PersonSet::PersonPtr>	found;
+	std::mutex mx_found;
+	std::condition_variable		cv_found;
 
-	cv::VideoCapture camera(redis.config_camera_url);
-
-	while (camera.isOpened())
+	std::thread recognoze_thread([&persons, &redis, &mx_found, &cv_found, &found]()
 	{
-		// get camera frame
+		// open camera
+		cv::VideoCapture camera(redis.config_camera_url);
 
-		if (sig_term || sig_hup)
-			return;
-
-		cv::Mat frame;
-		camera >> frame;
-
-		if (frame.data != nullptr)
+		while (camera.isOpened())
 		{
-			// recognize frame using persons
+			// get camera frame
 
-			auto found = persons.recognize(frame);
+			if (sig_term || sig_hup)
+				return;
 
-			auto time = std::chrono::system_clock::now();
+			cv::Mat frame;
+			camera >> frame;
 
-			for (auto & person : found)
+			if (frame.data != nullptr)
 			{
-				if ((time - person->last_recognize_time) > std::chrono::seconds(config_person_recognition_period))
+				// recognize frame using persons
+
+				auto ps = persons.recognize(frame);
+
+				auto time = std::chrono::system_clock::now();
+
 				{
-					person->last_recognize_time = time;
+					std::lock_guard<std::mutex> l(mx_found);
 
-					redis.person_found(person->guid);
+					for (auto & person : ps)
+					{
+						if ((time - person->last_recognize_time) > std::chrono::seconds(config_person_recognition_period))
+						{
+							person->last_recognize_time = time;
 
-					std::cout << person->guid << std::endl;
+							found.push_back(person);
+						}
+					}
+
+					if (!found.empty())
+						cv_found.notify_one();
 				}
 			}
+			else
+			{
+				// sleep 1 sec in case of invalid camera capture
+				std::this_thread::sleep_for(std::chrono::seconds(1));
+			}
+
+			redis.keep_alive();
 		}
-		else
+	
+	});
+
+	std::unique_lock<std::mutex> l(mx_found);
+
+	while (!sig_term && !sig_hup)
+	{
+		if (found.empty())
 		{
-			// sleep 1 sec in case of invalid camera capture
-			std::this_thread::sleep_for(std::chrono::seconds(1));
+			cv_found.wait_for(l, std::chrono::seconds(1));
+
+			if (found.empty())
+				continue;
 		}
 
-		redis.keep_alive();
+		std::list<PersonSet::PersonPtr> ps;
+
+		ps.splice(ps.end(), found);
+
+		l.unlock();
+
+		for (auto & person : ps)
+		{
+			redis.person_found(person->guid);
+
+#if STORE_RECOGNIZED_TO_LOGS
+			persons.store_id_to_sql_log(0, person->guid);
+#endif
+			std::cout << person->guid << std::endl;
+		}
+
+		l.lock();
 	}
+
+	recognoze_thread.join();
 }
 
 #ifdef USE_DAEMON
@@ -161,32 +219,27 @@ int main(int argc, char** argv)
 			if (!redis.get_configuration())
 				throw std::runtime_error("there no free slots");
 
-			LOG(LOG_INFO, "camera id : " << redis.config_key);
+			LOG(LOG_INFO,  "slot id   : " << redis.config_key);
 			LOG(LOG_DEBUG, "camera url: " << redis.config_camera_url);
 			LOG(LOG_DEBUG, "ftp url   : " << redis.config_ftp_url);
 			LOG(LOG_DEBUG, "channel   : " << redis.config_channel);
+			LOG(LOG_DEBUG, "db_host   : " << redis.config_db_host);
+			LOG(LOG_DEBUG, "db_name   : " << redis.config_db_name);
 
-			LOG(LOG_INFO, "loading of personas photos...");
+			LOG(LOG_INFO, "loading of persons samples...");
 
 			PersonSet persons;
 
-			// 2do: change credentials
-
-#ifdef _WIN32
-			if (!persons.load_from_sql("(localdb)\\MSSQLLocalDB", "casino", "casino_user", "casino", redis.config_ftp_url))
+			if (!persons.load_from_sql(
+				redis.config_db_host, redis.config_db_name, 
+				config_db_username, config_db_password, 
+				redis.config_ftp_url))
 			{
 				LOG(LOG_ERR, "no sql connection");
 				return 0;
 			}
-#else
-			if (!persons.load_from_sql("UNICORN", "casino", "casino_user", "casino", redis.config_ftp_url))
-			{
-				LOG(LOG_ERR, "no sql connection");
-				return 0;
-			}
-#endif
 
-			LOG(LOG_INFO, persons.persons.size() << " persons found");
+			LOG(LOG_INFO, "total " << persons.persons.size() << " persons loaded");
 
 			LOG(LOG_INFO, "start recognition...");
 

@@ -131,7 +131,7 @@ namespace ODBC {
 
 		bool connect(Environment & env, std::string const & strConnect);
 		bool connect(
-			std::string const & host, std::string const & db_name, 
+			std::string const & db_host, std::string const & db_name,
 			std::string const & db_username, std::string const & db_password);
 
 		void disconnect()

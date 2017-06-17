@@ -3,7 +3,7 @@
 DbPersonQuery::DbPersonQuery(ODBC::Connection & conn)
 	: ODBC::Stmt(conn)
 {
-	Prepare("SELECT A.Id, SolutionVersion, KeyFeatures FROM Person AS A LEFT JOIN FaceRecognitionSamples AS B ON A.Id = B.Id");
+	Prepare("SELECT A.Id, SolutionVersion, KeyFeatures FROM casino.Persons AS A LEFT JOIN casino.FaceRecognitionSamples AS B ON A.Id = B.Id");
 
 	Execute();
 }
@@ -26,7 +26,7 @@ bool DbPersonQuery::next()
 DbPersonInsertSample::DbPersonInsertSample(ODBC::Connection &conn)
 	: ODBC::Stmt(conn)
 {
-	Prepare("INSERT INTO FaceRecognitionSamples (Id, KeyFeatures, SolutionVersion) VALUES (?,?,?)");
+	Prepare("INSERT INTO casino.FaceRecognitionSamples (Id, KeyFeatures, SolutionVersion) VALUES (?,?,?)");
 }
 
 void DbPersonInsertSample::execute(std::string const & id, std::string const & key_features, long solution_version)
@@ -41,7 +41,7 @@ void DbPersonInsertSample::execute(std::string const & id, std::string const & k
 DbPersonUpdateSample::DbPersonUpdateSample(ODBC::Connection &conn)
 	: ODBC::Stmt(conn)
 {
-	Prepare("UPDATE FaceRecognitionSamples SET KeyFeatures=?, SolutionVersion=? WHERE Id=?");
+	Prepare("UPDATE casino.FaceRecognitionSamples SET KeyFeatures=?, SolutionVersion=? WHERE Id=?");
 }
 
 void DbPersonUpdateSample::execute(std::string const & id, std::string const & key_features, long solution_version)
@@ -49,6 +49,20 @@ void DbPersonUpdateSample::execute(std::string const & id, std::string const & k
 	BindI(1, key_features);
 	BindI(2, solution_version);
 	BindI(3, id);
+
+	Execute();
+}
+
+DbPersonInsertLog::DbPersonInsertLog(ODBC::Connection &conn)
+	: ODBC::Stmt(conn)
+{
+	Prepare("INSERT INTO casino.FaceRecognitionLogs (FaceCameraId, PersonId) VALUES (?,?)");
+}
+
+void DbPersonInsertLog::execute(long camera_id, std::string const & person_id)
+{
+	BindI(1, camera_id);
+	BindI(2, person_id);
 
 	Execute();
 }

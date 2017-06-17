@@ -1,5 +1,7 @@
 #pragma once
 
+#include "mssql_client.hpp"
+
 #include <string>
 #include <cstdint>
 #include <map>
@@ -12,9 +14,6 @@
 #include <opencv2/opencv.hpp>
 
 /// contains samples for recognize person
-
-class DbPersonQuery;
-class DbPersonUpdate;
 
 class Person
 {
@@ -46,6 +45,8 @@ class PersonSet
 {
 public:
 
+	typedef std::shared_ptr<Person>	PersonPtr;
+
 	PersonSet();
 	~PersonSet();
 
@@ -57,12 +58,17 @@ public:
 		std::string const & db_password,
 		std::string const & ftp_url);
 
-	std::vector<std::shared_ptr<Person>> recognize(cv::Mat const & frame);
+	std::vector<PersonPtr> recognize(cv::Mat const & frame);
 
 	std::vector<cv::Mat> load_from_ftp(std::string const & ftp_url, std::string const & person_guid);
 
+	void store_id_to_sql_log(int camera_id, std::string const & person_id);
+
 public:
 
-	// part of persons which is persistent in memory
-	std::list<std::shared_ptr<Person>>	persons;
+	std::list<PersonPtr>	persons;
+
+private:
+
+	ODBC::Connection m_sql_conn;
 };

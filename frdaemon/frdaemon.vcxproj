@@ -33,6 +33,41 @@
     <ClInclude Include="src\mssql_client.hpp" />
     <ClInclude Include="src\odbcxx\odbcxx.hpp" />
     <ClInclude Include="src\person.hpp" />
+    <ClInclude Include="src\rapidjson\allocators.h" />
+    <ClInclude Include="src\rapidjson\document.h" />
+    <ClInclude Include="src\rapidjson\encodedstream.h" />
+    <ClInclude Include="src\rapidjson\encodings.h" />
+    <ClInclude Include="src\rapidjson\error\en.h" />
+    <ClInclude Include="src\rapidjson\error\error.h" />
+    <ClInclude Include="src\rapidjson\filereadstream.h" />
+    <ClInclude Include="src\rapidjson\filewritestream.h" />
+    <ClInclude Include="src\rapidjson\fwd.h" />
+    <ClInclude Include="src\rapidjson\internal\biginteger.h" />
+    <ClInclude Include="src\rapidjson\internal\diyfp.h" />
+    <ClInclude Include="src\rapidjson\internal\dtoa.h" />
+    <ClInclude Include="src\rapidjson\internal\ieee754.h" />
+    <ClInclude Include="src\rapidjson\internal\itoa.h" />
+    <ClInclude Include="src\rapidjson\internal\meta.h" />
+    <ClInclude Include="src\rapidjson\internal\pow10.h" />
+    <ClInclude Include="src\rapidjson\internal\regex.h" />
+    <ClInclude Include="src\rapidjson\internal\stack.h" />
+    <ClInclude Include="src\rapidjson\internal\strfunc.h" />
+    <ClInclude Include="src\rapidjson\internal\strtod.h" />
+    <ClInclude Include="src\rapidjson\internal\swap.h" />
+    <ClInclude Include="src\rapidjson\istreamwrapper.h" />
+    <ClInclude Include="src\rapidjson\memorybuffer.h" />
+    <ClInclude Include="src\rapidjson\memorystream.h" />
+    <ClInclude Include="src\rapidjson\msinttypes\inttypes.h" />
+    <ClInclude Include="src\rapidjson\msinttypes\stdint.h" />
+    <ClInclude Include="src\rapidjson\ostreamwrapper.h" />
+    <ClInclude Include="src\rapidjson\pointer.h" />
+    <ClInclude Include="src\rapidjson\prettywriter.h" />
+    <ClInclude Include="src\rapidjson\rapidjson.h" />
+    <ClInclude Include="src\rapidjson\reader.h" />
+    <ClInclude Include="src\rapidjson\schema.h" />
+    <ClInclude Include="src\rapidjson\stream.h" />
+    <ClInclude Include="src\rapidjson\stringbuffer.h" />
+    <ClInclude Include="src\rapidjson\writer.h" />
     <ClInclude Include="src\redis-cplusplus-client\anet.h" />
     <ClInclude Include="src\redis-cplusplus-client\fmacros.h" />
     <ClInclude Include="src\redis-cplusplus-client\redisclient.h" />
@@ -40,6 +75,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="build_linux\.gdbinit" />
+    <None Include="build_linux\frdaemon.conf" />
     <None Include="build_linux\Makefile">
       <FileType>Document</FileType>
     </None>
@@ -89,6 +125,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <UseDebugLibraries>false</UseDebugLibraries>
     <ConfigurationType>Makefile</ConfigurationType>
+    <RemoteRootDir>~/dev/Casino/fr</RemoteRootDir>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings" />
@@ -96,11 +133,17 @@
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <RemoteBuildCommandLine>cd $(RemoteProjectDir)/build_linux; make</RemoteBuildCommandLine>
-    <RemoteCleanCommandLine>cd $(RemoteProjectDir)/build_linux; make clean</RemoteCleanCommandLine>
-    <RemoteReBuildCommandLine>cd $(RemoteProjectDir)/build_linux; make clean; make</RemoteReBuildCommandLine>
-    <RemoteBuildOutputs>$(RemoteProjectDir)/build_linux/$(ProjectName)</RemoteBuildOutputs>
+    <RemoteBuildCommandLine>cd $(RemoteProjectDir)/build_linux; make DEBUG=1</RemoteBuildCommandLine>
+    <RemoteCleanCommandLine>cd $(RemoteProjectDir)/build_linux; make  DEBUG=1 clean</RemoteCleanCommandLine>
+    <RemoteReBuildCommandLine>cd $(RemoteProjectDir)/build_linux; make  DEBUG=1 clean; make  DEBUG=1</RemoteReBuildCommandLine>
+    <RemoteBuildOutputs>$(RemoteProjectDir)/build_linux/$(ProjectName)d</RemoteBuildOutputs>
     <NMakeIncludeSearchPath>$(BOOST_ROOT);$(OPENCV_DIR)\include;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <RemoteBuildCommandLine>cd $(RemoteProjectDir)/build_linux; make</RemoteBuildCommandLine>
+    <RemoteReBuildCommandLine>cd $(RemoteProjectDir)/build_linux; make clean; make</RemoteReBuildCommandLine>
+    <RemoteCleanCommandLine>cd $(RemoteProjectDir)/build_linux; make clean</RemoteCleanCommandLine>
+    <RemoteBuildOutputs>$(RemoteProjectDir)/build_linux/$(ProjectName)</RemoteBuildOutputs>
   </PropertyGroup>
   <ItemDefinitionGroup />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -41,3 +41,13 @@ public:
 
 	void execute(std::string const & id, std::string const & key_features, long solution_version);
 };
+
+class DbPersonInsertLog
+	: protected ODBC::Stmt
+{
+public:
+
+	DbPersonInsertLog(ODBC::Connection &conn);
+
+	void execute(long camera_id, std::string const & person_id);
+};

@@ -1,5 +1,13 @@
 #include "frame_features.hpp"
 
+#include <random>
+
+std::vector<float> generate_features_for_sample(cv::Mat const & sample)
+{
+	// 2do: generate features for sample image
+	return{ SOLUTION_VERSION, 1, 1, 1, 1 };
+}
+
 FrameFeatures::FrameFeatures()
 {
 
@@ -13,11 +21,9 @@ void FrameFeatures::generate_features(cv::Mat const & m)
 bool FrameFeatures::contains_person(std::list<std::vector<float>> const & person_features)
 {
 	// 2do: check if person is contained on frame
-	return false;
-}
 
-std::vector<float> generate_features_for_sample(cv::Mat const & sample)
-{
-	// 2do: download from ftp samples & generate features
-	return { SOLUTION_VERSION, 1, 1, 1, 1 };
+	static std::default_random_engine rng(std::random_device{}());
+
+	return std::uniform_real_distribution<float>(0,100)(rng) < 2.0;
+
 }

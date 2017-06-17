@@ -1,6 +1,10 @@
 
 TARGET = frdaemon
 
+ifdef DEBUG
+TARGET = frdaemond
+endif
+
 SOURCES = \
 	../src/frd.cpp \
 	../src/person.cpp \
@@ -14,10 +18,11 @@ SOURCES = \
 
 CPPFLAGS 	= -std=c++14 -D_DEFAULT_SOURCE 
 
+ifdef DEBUG
+CPPFLAGS 	+= -D_DEBUG -O0 -ggdb -Wall -g
+endif
+
 #CPPFLAGS 	+= -DUSE_DAEMON
-
-#CPPFLAGS 	+= -g -Wall -O0 -D_DEBUG -ggdb 
-
 
 LIBS 		+= -lpthread
 LIBS 		+= -lboost_system -lboost_filesystem

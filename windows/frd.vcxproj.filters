@@ -19,6 +19,18 @@
     <Filter Include="src\odbcxx">
       <UniqueIdentifier>{2bd3a76b-dbea-495f-a5b9-127ef5270b96}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\rapidjson">
+      <UniqueIdentifier>{0c6a6360-1b36-43d6-b082-1e3410c42ce9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\rapidjson\error">
+      <UniqueIdentifier>{9760fd4c-b1c1-4927-a55f-bf9b8016a145}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\rapidjson\internal">
+      <UniqueIdentifier>{5a56199e-2138-4078-9113-0349bba41155}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\rapidjson\msinttypes">
+      <UniqueIdentifier>{df9ea8c5-2fd2-4e69-bc67-825dde85fc08}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\frdaemon\src\frame_features.cpp">
@@ -76,6 +88,111 @@
     </ClInclude>
     <ClInclude Include="..\frdaemon\src\odbcxx\odbcxx.hpp">
       <Filter>src\odbcxx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\frdaemon\src\rapidjson\allocators.h">
+      <Filter>src\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="..\frdaemon\src\rapidjson\document.h">
+      <Filter>src\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="..\frdaemon\src\rapidjson\encodedstream.h">
+      <Filter>src\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="..\frdaemon\src\rapidjson\encodings.h">
+      <Filter>src\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="..\frdaemon\src\rapidjson\filereadstream.h">
+      <Filter>src\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="..\frdaemon\src\rapidjson\filewritestream.h">
+      <Filter>src\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="..\frdaemon\src\rapidjson\fwd.h">
+      <Filter>src\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="..\frdaemon\src\rapidjson\istreamwrapper.h">
+      <Filter>src\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="..\frdaemon\src\rapidjson\memorybuffer.h">
+      <Filter>src\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="..\frdaemon\src\rapidjson\memorystream.h">
+      <Filter>src\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="..\frdaemon\src\rapidjson\ostreamwrapper.h">
+      <Filter>src\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="..\frdaemon\src\rapidjson\pointer.h">
+      <Filter>src\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="..\frdaemon\src\rapidjson\prettywriter.h">
+      <Filter>src\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="..\frdaemon\src\rapidjson\rapidjson.h">
+      <Filter>src\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="..\frdaemon\src\rapidjson\reader.h">
+      <Filter>src\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="..\frdaemon\src\rapidjson\schema.h">
+      <Filter>src\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="..\frdaemon\src\rapidjson\stream.h">
+      <Filter>src\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="..\frdaemon\src\rapidjson\stringbuffer.h">
+      <Filter>src\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="..\frdaemon\src\rapidjson\writer.h">
+      <Filter>src\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="..\frdaemon\src\rapidjson\error\en.h">
+      <Filter>src\rapidjson\error</Filter>
+    </ClInclude>
+    <ClInclude Include="..\frdaemon\src\rapidjson\error\error.h">
+      <Filter>src\rapidjson\error</Filter>
+    </ClInclude>
+    <ClInclude Include="..\frdaemon\src\rapidjson\internal\biginteger.h">
+      <Filter>src\rapidjson\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\frdaemon\src\rapidjson\internal\diyfp.h">
+      <Filter>src\rapidjson\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\frdaemon\src\rapidjson\internal\dtoa.h">
+      <Filter>src\rapidjson\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\frdaemon\src\rapidjson\internal\ieee754.h">
+      <Filter>src\rapidjson\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\frdaemon\src\rapidjson\internal\itoa.h">
+      <Filter>src\rapidjson\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\frdaemon\src\rapidjson\internal\meta.h">
+      <Filter>src\rapidjson\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\frdaemon\src\rapidjson\internal\pow10.h">
+      <Filter>src\rapidjson\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\frdaemon\src\rapidjson\internal\regex.h">
+      <Filter>src\rapidjson\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\frdaemon\src\rapidjson\internal\stack.h">
+      <Filter>src\rapidjson\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\frdaemon\src\rapidjson\internal\strfunc.h">
+      <Filter>src\rapidjson\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\frdaemon\src\rapidjson\internal\strtod.h">
+      <Filter>src\rapidjson\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\frdaemon\src\rapidjson\internal\swap.h">
+      <Filter>src\rapidjson\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\frdaemon\src\rapidjson\msinttypes\inttypes.h">
+      <Filter>src\rapidjson\msinttypes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\frdaemon\src\rapidjson\msinttypes\stdint.h">
+      <Filter>src\rapidjson\msinttypes</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

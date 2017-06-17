@@ -100,7 +100,7 @@ namespace ODBC {
 	}
 
 	bool Connection::connect(
-		std::string const & host, 
+		std::string const & db_host, 
 		std::string const & db_name, 
 		std::string const & db_username, 
 		std::string const & db_password)
@@ -108,12 +108,19 @@ namespace ODBC {
 		// 2do:
 #ifdef _WIN32
 		std::string strConnect("DRIVER={SQL Server Native Client 11.0};Trusted_Connection=yes;");
+
+		strConnect += "SERVER=" + db_host + ";";
+		strConnect += "Database=" + db_name + ";";
 #else
-		std::string strConnect("DRIVER={freetds};");
+		std::string strConnect("DRIVER={FreeTDS};");// TDS_Version = 8.0; ");
+
+		strConnect += "SERVER=" + db_host + ";";
+		strConnect += "PORT=1433;";
+//		strConnect += "DataSource=" + db_host + ";";
+		strConnect += "Database=" + db_name + ";";
+//		strConnect += "InitialCatalog=" + db_name + ";";
 #endif
 
-		strConnect += "SERVER=" + host + ";";
-		strConnect += "Database=" + db_name + ";";
 
 		if (!db_username.empty())
 			strConnect += "UID=" + db_username + ";";
