@@ -31,60 +31,68 @@ void recognize(PersonSet & persons, RedisClient & redis)
 	std::mutex mx_found;
 	std::condition_variable		cv_found;
 
-	std::thread recognoze_thread([&persons, &redis, &mx_found, &cv_found, &found]()
+	volatile bool bThreadError = false;
+
+	std::thread recognoze_thread([&]()
 	{
 		// open camera
-		cv::VideoCapture camera(redis.config_camera_url);
-
-		while (camera.isOpened())
+		try
 		{
-			// get camera frame
+			cv::VideoCapture camera(redis.config_camera_url);
 
-			if (sig_term || sig_hup)
-				return;
-
-			cv::Mat frame;
-			camera >> frame;
-
-			if (frame.data != nullptr)
+			while (camera.isOpened())
 			{
-				// recognize frame using persons
+				// get camera frame
 
-				auto ps = persons.recognize(frame);
+				if (sig_term || sig_hup)
+					return;
 
-				auto time = std::chrono::system_clock::now();
+				cv::Mat frame;
+				camera >> frame;
 
+				if (!frame.empty())
 				{
-					std::lock_guard<std::mutex> l(mx_found);
+					// recognize frame using persons
 
-					for (auto & person : ps)
+					auto ps = persons.recognize(frame);
+
+					auto time = std::chrono::system_clock::now();
+
 					{
-						if ((time - person->last_recognize_time) > std::chrono::seconds(config_person_recognition_period))
+						std::lock_guard<std::mutex> l(mx_found);
+
+						for (auto & person : ps)
 						{
-							person->last_recognize_time = time;
+							if ((time - person->last_recognize_time) > std::chrono::seconds(config_person_recognition_period))
+							{
+								person->last_recognize_time = time;
 
-							found.push_back(person);
+								found.push_back(person);
+							}
 						}
+
+						if (!found.empty())
+							cv_found.notify_one();
 					}
-
-					if (!found.empty())
-						cv_found.notify_one();
 				}
-			}
-			else
-			{
-				// sleep 1 sec in case of invalid camera capture
-				std::this_thread::sleep_for(std::chrono::seconds(1));
-			}
+				else
+				{
+					// sleep 1 sec in case of invalid camera capture
+					std::this_thread::sleep_for(std::chrono::seconds(1));
+				}
 
-			redis.keep_alive();
+				redis.keep_alive();
+			}
 		}
-	
+		catch (...)
+		{
+			bThreadError = true;
+		}
 	});
 
 	std::unique_lock<std::mutex> l(mx_found);
 
-	while (!sig_term && !sig_hup)
+	while (!sig_term && !sig_hup && !bThreadError)
 	{
 		if (found.empty())
 		{
@@ -111,6 +119,11 @@ void recognize(PersonSet & persons, RedisClient & redis)
 		}
 
 		l.lock();
+	}
+
+	if (bThreadError)
+	{
+		LOG(LOG_ERR, "error was ocured while recognize");
 	}
 
 	recognoze_thread.join();
@@ -157,6 +170,58 @@ void daemonize()
 #endif // _WIN32
 }
 #endif // USE_DAEMON
+
+void run(std::string const & redis_host, std::string const & redis_port)
+{
+	try
+	{
+		RedisClient redis(redis_host, redis_port);
+
+		LOG(LOG_INFO, "reading configuration...");
+
+		if (!redis.get_configuration())
+		{
+			LOG(LOG_ERR, "there no free slots");
+			return;
+		}
+
+		LOG(LOG_INFO, "slot id   : " << redis.config_key);
+		LOG(LOG_DEBUG, "camera url: " << redis.config_camera_url);
+		LOG(LOG_DEBUG, "ftp url   : " << redis.config_ftp_url);
+		LOG(LOG_DEBUG, "channel   : " << redis.config_channel);
+		LOG(LOG_DEBUG, "db_host   : " << redis.config_db_host);
+		LOG(LOG_DEBUG, "db_name   : " << redis.config_db_name);
+
+		LOG(LOG_INFO, "loading of persons samples...");
+
+		PersonSet persons;
+
+		if (!persons.load_from_sql(
+			redis.config_db_host, redis.config_db_name,
+			config_db_username, config_db_password,
+			redis.config_ftp_url))
+		{
+			LOG(LOG_ERR, "no sql connection");
+			return;
+		}
+
+		LOG(LOG_INFO, persons.persons.size() << " persons loaded");
+
+		if (persons.persons.empty())
+		{
+			LOG(LOG_INFO, "no person for recognition");
+			return;
+		}
+
+		LOG(LOG_INFO, "start recognition...");
+
+		recognize(persons, redis);
+	}
+	catch (std::exception const & e)
+	{
+		LOG(LOG_ERR, "error: " << e.what());
+	}
+}
 
 int main(int argc, char** argv)
 {
@@ -210,54 +275,9 @@ int main(int argc, char** argv)
 	{
 		sig_hup = false;
 
-		try
-		{
-			RedisClient redis(redis_host, redis_port);
+		run(redis_host, redis_port);
 
-			LOG(LOG_INFO, "reading configuration...");
-
-			if (!redis.get_configuration())
-				throw std::runtime_error("there no free slots");
-
-			LOG(LOG_INFO,  "slot id   : " << redis.config_key);
-			LOG(LOG_DEBUG, "camera url: " << redis.config_camera_url);
-			LOG(LOG_DEBUG, "ftp url   : " << redis.config_ftp_url);
-			LOG(LOG_DEBUG, "channel   : " << redis.config_channel);
-			LOG(LOG_DEBUG, "db_host   : " << redis.config_db_host);
-			LOG(LOG_DEBUG, "db_name   : " << redis.config_db_name);
-
-			LOG(LOG_INFO, "loading of persons samples...");
-
-			PersonSet persons;
-
-			if (!persons.load_from_sql(
-				redis.config_db_host, redis.config_db_name, 
-				config_db_username, config_db_password, 
-				redis.config_ftp_url))
-			{
-				LOG(LOG_ERR, "no sql connection");
-				return 0;
-			}
-
-			LOG(LOG_INFO, persons.persons.size() << " persons loaded");
-
-			if (persons.persons.empty())
-			{
-				LOG(LOG_INFO, "no person for recognition");
-				return 0;
-			}
-
-			LOG(LOG_INFO, "start recognition...");
-
-			recognize(persons, redis);
-		}
-		catch (std::exception const & e)
-		{
-			LOG(LOG_ERR, "error: " << e.what());
-#ifndef _WIN32	// 2do: temporary
-			return 0;
-#endif
-		}
+		// exit from run on error or sig_term or sig_hup
 
 		if (sig_term)
 		{
@@ -271,10 +291,15 @@ int main(int argc, char** argv)
 			continue;
 		}
 
+#ifdef _DEBUG
+		// do not run eternally while debug
+		break;
+#endif
+
 		// on any error sleep for 1 minute & try again
-		LOG(LOG_INFO, "waiting for 1 munute...");
+		LOG(LOG_INFO, "waiting for 1 minute...");
 		std::this_thread::sleep_for(std::chrono::seconds(60));
-	}
+	} // while
 
 #if defined(USE_DAEMON) && !defined(_WIN32)
 	closelog();

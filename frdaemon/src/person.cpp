@@ -222,23 +222,30 @@ void PersonSet::load_from_ftp(std::string const & ftp_url)
 
 std::vector<std::shared_ptr<Person>> PersonSet::recognize(cv::Mat const & frame)
 {
-	std::vector<std::shared_ptr<Person>> found;
-
-	FrameFeatures ff;
-	ff.generate_features(frame);
-
-	for (auto & person : persons)
+	try
 	{
-		if (sig_term)
-			return{};
+		std::vector<std::shared_ptr<Person>> found;
 
-		if (ff.contains_person(person->features))
+		FrameFeatures ff;
+		ff.generate_features(frame);
+
+		for (auto & person : persons)
 		{
-			found.push_back(person);
-		}
-	}
+			if (sig_term)
+				return{};
 
-	return found;
+			if (ff.contains_person(person->features))
+			{
+				found.push_back(person);
+			}
+		}
+
+		return found;
+	}
+	catch (...)
+	{
+		return{};
+	}
 }
 
 bool PersonSet::load_from_sql(
