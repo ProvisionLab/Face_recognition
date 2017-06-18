@@ -13,7 +13,11 @@ SOURCES = \
 	../src/mssql_client.cpp \
 	../src/odbcxx/odbcxx.cpp \
 	../src/redis_client.cpp \
-	../src/redis-cplusplus-client/anet.c
+	../src/redis-cplusplus-client/anet.c \
+	../src/recognition/caffe_person_recognition.cpp \
+	../src/recognition/caffe_binding.cpp \
+	../src/recognition/util/bounding_box.cpp \
+	../src/recognition/util/help_functions.cpp 
 
 
 CPPFLAGS 	= -std=c++14 -D_DEFAULT_SOURCE 
@@ -25,11 +29,17 @@ endif
 #CPPFLAGS 	+= -DUSE_DAEMON
 
 LIBS 		+= -lpthread
-LIBS 		+= -lboost_system -lboost_filesystem
+LIBS 		+= -lboost_system -lboost_filesystem -lboost_thread
 LIBS 		+= -lcurl
 LIBS 		+= -lopencv_core -lopencv_imgproc -lopencv_video -lopencv_highgui
 LIBS 		+= -lodbc
 LIBS 		+= -luuid
+LIBS		+= -lglog
+LIBS		+=  -L../src/caffe/build/lib -lcaffe
+
+INCLUDES	+= -I../src/caffe/build/src/caffe/proto
+INCLUDES	+= -I../src/caffe/include
+
 
 all: 	$(TARGET)
 

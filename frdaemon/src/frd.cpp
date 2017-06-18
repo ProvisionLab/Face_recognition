@@ -1,4 +1,3 @@
-
 #include "redis_client.hpp"
 #include "person.hpp"
 
@@ -7,8 +6,13 @@
 #include <condition_variable>
 #include <atomic>
 #include <csignal>
-
+#include "frame_features.hpp"
 #include "log.h"
+
+#include "recognition/caffe_binding.h"
+caffe::CaffeBinding* kCaffeBinding = new caffe::CaffeBinding();
+
+
 
 #define STORE_RECOGNIZED_TO_LOGS 0
 
@@ -238,6 +242,8 @@ int main(int argc, char** argv)
 	daemonize();
 
 #endif
+
+	FrameFeatures::initialize();
 
 	std::string redis_host(argv[1]);
 	std::string redis_port = std::to_string(RedisClient::REDIS_PORT);
