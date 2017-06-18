@@ -1,11 +1,24 @@
 
-#include "person.hpp"
 #include "redis_client.hpp"
+#include "person.hpp"
+
 #include <thread>
+#include <mutex>
+#include <condition_variable>
 #include <atomic>
 #include <csignal>
 
 #include "log.h"
+
+#define STORE_RECOGNIZED_TO_LOGS 0
+
+#ifdef _WIN32
+static const std::string config_db_username = "casino_user";
+static const std::string config_db_password = "casino";
+#else
+static const std::string config_db_username = "sa";
+static const std::string config_db_password = "Admin123!";
+#endif
 
 std::atomic<bool>	sig_term(false);
 std::atomic<bool>	sig_hup(false);
@@ -14,48 +27,106 @@ const int config_person_recognition_period = 5; // 5 seconds
 
 void recognize(PersonSet & persons, RedisClient & redis)
 {
-	// open camera
+	std::list<PersonSet::PersonPtr>	found;
+	std::mutex mx_found;
+	std::condition_variable		cv_found;
 
-	cv::VideoCapture camera(redis.config_camera_url);
+	volatile bool bThreadError = false;
 
-	while (camera.isOpened())
+	std::thread recognoze_thread([&]()
 	{
-		// get camera frame
-
-		if (sig_term || sig_hup)
-			return;
-
-		cv::Mat frame;
-		camera >> frame;
-
-		if (frame.data != nullptr)
+		// open camera
+		try
 		{
-			// recognize frame using persons
+			cv::VideoCapture camera(redis.config_camera_url);
 
-			auto found = persons.recognize(frame);
-
-			auto time = std::chrono::system_clock::now();
-
-			for (auto & person : found)
+			while (camera.isOpened())
 			{
-				if ((time - person->last_recognize_time) > std::chrono::seconds(config_person_recognition_period))
+				// get camera frame
+
+				if (sig_term || sig_hup)
+					return;
+
+				cv::Mat frame;
+				camera >> frame;
+
+				if (!frame.empty())
 				{
-					person->last_recognize_time = time;
+					// recognize frame using persons
 
-					redis.person_found(person->guid);
+					auto ps = persons.recognize(frame);
 
-					std::cout << person->guid << std::endl;
+					auto time = std::chrono::system_clock::now();
+
+					{
+						std::lock_guard<std::mutex> l(mx_found);
+
+						for (auto & person : ps)
+						{
+							if ((time - person->last_recognize_time) > std::chrono::seconds(config_person_recognition_period))
+							{
+								person->last_recognize_time = time;
+
+								found.push_back(person);
+							}
+						}
+
+						if (!found.empty())
+							cv_found.notify_one();
+					}
 				}
+				else
+				{
+					// sleep 1 sec in case of invalid camera capture
+					std::this_thread::sleep_for(std::chrono::seconds(1));
+				}
+
+				redis.keep_alive();
 			}
 		}
-		else
+		catch (...)
 		{
-			// sleep 1 sec in case of invalid camera capture
-			std::this_thread::sleep_for(std::chrono::seconds(1));
+			bThreadError = true;
+		}
+	});
+
+	std::unique_lock<std::mutex> l(mx_found);
+
+	while (!sig_term && !sig_hup && !bThreadError)
+	{
+		if (found.empty())
+		{
+			cv_found.wait_for(l, std::chrono::seconds(1));
+
+			if (found.empty())
+				continue;
 		}
 
-		redis.keep_alive();
+		std::list<PersonSet::PersonPtr> ps;
+
+		ps.splice(ps.end(), found);
+
+		l.unlock();
+
+		for (auto & person : ps)
+		{
+			redis.person_found(person->sample_url);
+
+#if STORE_RECOGNIZED_TO_LOGS
+			persons.store_id_to_sql_log(0, person->sample_url);
+#endif
+			std::cout << person->sample_url << std::endl;
+		}
+
+		l.lock();
 	}
+
+	if (bThreadError)
+	{
+		LOG(LOG_ERR, "error was ocured while recognize");
+	}
+
+	recognoze_thread.join();
 }
 
 #ifdef USE_DAEMON
@@ -99,6 +170,58 @@ void daemonize()
 #endif // _WIN32
 }
 #endif // USE_DAEMON
+
+void run(std::string const & redis_host, std::string const & redis_port)
+{
+	try
+	{
+		RedisClient redis(redis_host, redis_port);
+
+		LOG(LOG_INFO, "reading configuration...");
+
+		if (!redis.get_configuration())
+		{
+			LOG(LOG_ERR, "there no free slots");
+			return;
+		}
+
+		LOG(LOG_INFO, "slot id   : " << redis.config_key);
+		LOG(LOG_DEBUG, "camera url: " << redis.config_camera_url);
+		LOG(LOG_DEBUG, "ftp url   : " << redis.config_ftp_url);
+		LOG(LOG_DEBUG, "channel   : " << redis.config_channel);
+		LOG(LOG_DEBUG, "db_host   : " << redis.config_db_host);
+		LOG(LOG_DEBUG, "db_name   : " << redis.config_db_name);
+
+		LOG(LOG_INFO, "loading of persons samples...");
+
+		PersonSet persons;
+
+		if (!persons.load_from_sql(
+			redis.config_db_host, redis.config_db_name,
+			config_db_username, config_db_password,
+			redis.config_ftp_url))
+		{
+			LOG(LOG_ERR, "no sql connection");
+			return;
+		}
+
+		LOG(LOG_INFO, persons.persons.size() << " persons loaded");
+
+		if (persons.persons.empty())
+		{
+			LOG(LOG_INFO, "no person for recognition");
+			return;
+		}
+
+		LOG(LOG_INFO, "start recognition...");
+
+		recognize(persons, redis);
+	}
+	catch (std::exception const & e)
+	{
+		LOG(LOG_ERR, "error: " << e.what());
+	}
+}
 
 int main(int argc, char** argv)
 {
@@ -152,34 +275,9 @@ int main(int argc, char** argv)
 	{
 		sig_hup = false;
 
-		try
-		{
-			RedisClient redis(redis_host, redis_port);
+		run(redis_host, redis_port);
 
-			LOG(LOG_INFO, "reading configuration...");
-
-			if (!redis.get_configuration())
-				throw std::runtime_error("there no free slots");
-
-			LOG(LOG_INFO, "camera id : " << redis.config_key);
-			LOG(LOG_DEBUG, "camera url: " << redis.config_camera_url);
-			LOG(LOG_DEBUG, "ftp url   : " << redis.config_ftp_url);
-			LOG(LOG_DEBUG, "channel   : " << redis.config_channel);
-
-			LOG(LOG_INFO, "loading of personas photos...");
-
-			PersonSet persons;
-
-			persons.load_from_ftp(redis.config_ftp_url);
-
-			LOG(LOG_INFO, "start recognition...");
-
-			recognize(persons, redis);
-		}
-		catch (std::exception const & e)
-		{
-			LOG(LOG_ERR, "error: " << e.what());
-		}
+		// exit from run on error or sig_term or sig_hup
 
 		if (sig_term)
 		{
@@ -193,10 +291,15 @@ int main(int argc, char** argv)
 			continue;
 		}
 
+#ifdef _DEBUG
+		// do not run eternally while debug
+		break;
+#endif
+
 		// on any error sleep for 1 minute & try again
-		LOG(LOG_INFO, "waiting for 1 munute...");
+		LOG(LOG_INFO, "waiting for 1 minute...");
 		std::this_thread::sleep_for(std::chrono::seconds(60));
-	}
+	} // while
 
 #if defined(USE_DAEMON) && !defined(_WIN32)
 	closelog();

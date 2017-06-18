@@ -11,6 +11,8 @@ public:
 	std::vector<std::string> get_list(std::string dirpath);
 	std::vector<uint8_t> get_file(std::string filepath);
 
+	std::vector<std::vector<uint8_t>> get_files(std::string dirpath);
+
 public:
 
 	std::string ftp_url;

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "mssql_client.hpp"
+
 #include <string>
 #include <cstdint>
 #include <map>
@@ -12,28 +14,28 @@
 #include <opencv2/opencv.hpp>
 
 /// contains samples for recognize person
+
 class Person
 {
 public:
 
-	Person(std::string const & guid)
-		: guid(guid)
-	{
-	}
+	Person(unsigned char uuid[16], std::string const & sample_url, std::string const & features_json);
 
-	/// serialization
-	Person(std::ifstream & f);
-	void save(std::ofstream & f);
+	void create_features(std::vector<uint8_t> const & fdata);
 
-	void append_sample(std::string const & fn, std::vector<uint8_t> data);
+	void set_features_json(std::string const & json);
+	std::string get_features_json() const;
 
 	size_t get_memory_usage();
 
 public:
 
-	std::string	guid;
+	unsigned char	person_id[16];
+	std::string		sample_url;
 
-	std::map<std::string, cv::Mat>	files;
+	std::list<std::vector<float>>	features;
+
+	long version = 0;
 
 	std::chrono::system_clock::time_point	last_recognize_time;	/// time of last successfull recognize
 };
@@ -44,21 +46,30 @@ class PersonSet
 {
 public:
 
+	typedef std::shared_ptr<Person>	PersonPtr;
+
 	PersonSet();
 	~PersonSet();
 
 	void load_from_ftp(std::string const & ftp_url);
+	bool load_from_sql(
+		std::string const & host, 
+		std::string const & db_name, 
+		std::string const & db_username, 
+		std::string const & db_password,
+		std::string const & ftp_url);
 
-	std::vector<std::shared_ptr<Person>> recognize( cv::Mat const & frame );
+	std::vector<PersonPtr> recognize(cv::Mat const & frame);
+
+	std::vector<cv::Mat> load_from_ftp(std::string const & ftp_url, std::string const & person_guid);
+
+	void store_id_to_sql_log(int camera_id, std::string const & person_id);
 
 public:
 
-	bool swap_mode = true;
-	std::string		swap_file_name;
+	std::list<PersonPtr>	persons;
 
-	size_t	preload_persons_threshold = 100; /// size of portion which is loaded from disk at a time
-	size_t  max_memory_usage = 1000000000; // 1Gb
+private:
 
-	// part of persons which is persistent in memory
-	std::list<std::shared_ptr<Person>>	persons;
+	ODBC::Connection m_sql_conn;
 };

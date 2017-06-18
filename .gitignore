@@ -210,5 +210,3 @@ FakesAssemblies/
 .~lock.*
 *.VC.db
 *.VC.opendb
-
-/frdaemon/build_windows/curl

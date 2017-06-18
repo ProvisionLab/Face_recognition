@@ -39,6 +39,6 @@ inline void sys_log_stream( int priority, std::string const & s )
 #include <iostream>
 
 #define L_RESULT(x)		std::cout << x << std::endl;
-#define LOG(f,x)		std::cerr << x << std::endl;
+#define LOG(f,x)		std::cerr << x << std::endl
 
 #endif // USE_DAEMON

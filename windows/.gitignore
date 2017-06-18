@@ -1,0 +1,12 @@
+
+/curl/*
+!/curl/README
+!/curl/projects/
+/curl/projects/*
+!/curl/projects/windows/
+/curl/projects/windows/*
+!/curl/projects/windows/VC14/
+/curl/projects/windows/VC14/*
+!/curl/projects/windows/VC14/lib
+
+

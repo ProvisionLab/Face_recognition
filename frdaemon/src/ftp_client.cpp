@@ -11,6 +11,10 @@
 
 #include <memory>
 
+#include <atomic>
+
+extern std::atomic<bool> sig_term;
+
 #ifdef _DEBUG
 static int debug_callback(CURL *handle,
 	curl_infotype type,
@@ -224,4 +228,21 @@ std::vector<uint8_t> FtpClient::get_file(std::string filepath)
 	{
 		return data;
 	}
+}
+
+std::vector<std::vector<uint8_t>> FtpClient::get_files(std::string dirpath)
+{
+	std::vector<std::vector<uint8_t>> files;
+
+	auto file_names = get_list(dirpath);
+
+	for (auto & fn : file_names)
+	{
+		if (sig_term)
+			return{};
+
+		files.emplace_back(get_file(dirpath + "/" + fn));
+	}
+
+	return std::move(files);
 }

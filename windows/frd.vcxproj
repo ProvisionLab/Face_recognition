@@ -23,6 +23,7 @@
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>frd</RootNamespace>
     <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+    <ProjectName>frd</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -74,16 +75,16 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>.\curl\include;$(OPENCV_DIR)\include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(OPENCV_DIR)\x64\vc14\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>.\curl\include;$(OPENCV_DIR)\include;$(BOOST_ROOT);$(IncludePath)</IncludePath>
+    <LibraryPath>$(OPENCV_DIR)\x64\vc14\lib;$(BOOST_ROOT)\stage64\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>.\curl\include;$(OPENCV_DIR)\include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(OPENCV_DIR)\x64\vc14\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>.\curl\include;$(OPENCV_DIR)\include;$(BOOST_ROOT);$(IncludePath)</IncludePath>
+    <LibraryPath>$(OPENCV_DIR)\x64\vc14\lib;$(BOOST_ROOT)\stage64\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -148,41 +149,73 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="..\src\log.h" />
-    <ClInclude Include="..\src\ftp_client.hpp" />
-    <ClInclude Include="..\src\person.hpp" />
-    <ClInclude Include="..\src\redis-cplusplus-client\anet_win32.h" />
-    <ClInclude Include="..\src\redis-cplusplus-client\fmacros.h" />
-    <ClInclude Include="..\src\redis-cplusplus-client\redisclient.h" />
-    <ClInclude Include="..\src\redis_client.hpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="..\src\frd.cpp" />
-    <ClCompile Include="..\src\ftp_client.cpp" />
-    <ClCompile Include="..\src\person.cpp" />
-    <ClCompile Include="..\src\redis-cplusplus-client\anet_win32.c" />
-    <ClCompile Include="..\src\redis_client.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="packages.config" />
-  </ItemGroup>
-  <ItemGroup>
     <ProjectReference Include="curl\projects\Windows\VC14\lib\libcurl.vcxproj">
       <Project>{da6f56b4-06a4-441d-ad70-ac5a7d51fadb}</Project>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\frdaemon\src\frame_features.cpp" />
+    <ClCompile Include="..\frdaemon\src\frd.cpp" />
+    <ClCompile Include="..\frdaemon\src\ftp_client.cpp" />
+    <ClCompile Include="..\frdaemon\src\mssql_client.cpp" />
+    <ClCompile Include="..\frdaemon\src\odbcxx\odbcxx.cpp" />
+    <ClCompile Include="..\frdaemon\src\person.cpp" />
+    <ClCompile Include="..\frdaemon\src\redis-cplusplus-client\anet_win32.c" />
+    <ClCompile Include="..\frdaemon\src\redis_client.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\frdaemon\src\frame_features.hpp" />
+    <ClInclude Include="..\frdaemon\src\ftp_client.hpp" />
+    <ClInclude Include="..\frdaemon\src\log.h" />
+    <ClInclude Include="..\frdaemon\src\mssql_client.hpp" />
+    <ClInclude Include="..\frdaemon\src\odbcxx\odbcxx.hpp" />
+    <ClInclude Include="..\frdaemon\src\person.hpp" />
+    <ClInclude Include="..\frdaemon\src\rapidjson\allocators.h" />
+    <ClInclude Include="..\frdaemon\src\rapidjson\document.h" />
+    <ClInclude Include="..\frdaemon\src\rapidjson\encodedstream.h" />
+    <ClInclude Include="..\frdaemon\src\rapidjson\encodings.h" />
+    <ClInclude Include="..\frdaemon\src\rapidjson\error\en.h" />
+    <ClInclude Include="..\frdaemon\src\rapidjson\error\error.h" />
+    <ClInclude Include="..\frdaemon\src\rapidjson\filereadstream.h" />
+    <ClInclude Include="..\frdaemon\src\rapidjson\filewritestream.h" />
+    <ClInclude Include="..\frdaemon\src\rapidjson\fwd.h" />
+    <ClInclude Include="..\frdaemon\src\rapidjson\internal\biginteger.h" />
+    <ClInclude Include="..\frdaemon\src\rapidjson\internal\diyfp.h" />
+    <ClInclude Include="..\frdaemon\src\rapidjson\internal\dtoa.h" />
+    <ClInclude Include="..\frdaemon\src\rapidjson\internal\ieee754.h" />
+    <ClInclude Include="..\frdaemon\src\rapidjson\internal\itoa.h" />
+    <ClInclude Include="..\frdaemon\src\rapidjson\internal\meta.h" />
+    <ClInclude Include="..\frdaemon\src\rapidjson\internal\pow10.h" />
+    <ClInclude Include="..\frdaemon\src\rapidjson\internal\regex.h" />
+    <ClInclude Include="..\frdaemon\src\rapidjson\internal\stack.h" />
+    <ClInclude Include="..\frdaemon\src\rapidjson\internal\strfunc.h" />
+    <ClInclude Include="..\frdaemon\src\rapidjson\internal\strtod.h" />
+    <ClInclude Include="..\frdaemon\src\rapidjson\internal\swap.h" />
+    <ClInclude Include="..\frdaemon\src\rapidjson\istreamwrapper.h" />
+    <ClInclude Include="..\frdaemon\src\rapidjson\memorybuffer.h" />
+    <ClInclude Include="..\frdaemon\src\rapidjson\memorystream.h" />
+    <ClInclude Include="..\frdaemon\src\rapidjson\msinttypes\inttypes.h" />
+    <ClInclude Include="..\frdaemon\src\rapidjson\msinttypes\stdint.h" />
+    <ClInclude Include="..\frdaemon\src\rapidjson\ostreamwrapper.h" />
+    <ClInclude Include="..\frdaemon\src\rapidjson\pointer.h" />
+    <ClInclude Include="..\frdaemon\src\rapidjson\prettywriter.h" />
+    <ClInclude Include="..\frdaemon\src\rapidjson\rapidjson.h" />
+    <ClInclude Include="..\frdaemon\src\rapidjson\reader.h" />
+    <ClInclude Include="..\frdaemon\src\rapidjson\schema.h" />
+    <ClInclude Include="..\frdaemon\src\rapidjson\stream.h" />
+    <ClInclude Include="..\frdaemon\src\rapidjson\stringbuffer.h" />
+    <ClInclude Include="..\frdaemon\src\rapidjson\writer.h" />
+    <ClInclude Include="..\frdaemon\src\redis-cplusplus-client\anet_win32.h" />
+    <ClInclude Include="..\frdaemon\src\redis-cplusplus-client\fmacros.h" />
+    <ClInclude Include="..\frdaemon\src\redis-cplusplus-client\redisclient.h" />
+    <ClInclude Include="..\frdaemon\src\redis_client.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config">
+      <SubType>Designer</SubType>
+    </None>
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
-  <ImportGroup Label="ExtensionTargets">
-    <Import Project="packages\zlib.v140.windesktop.msvcstl.static.rt-dyn.1.2.8.8\build\native\zlib.v140.windesktop.msvcstl.static.rt-dyn.targets" Condition="Exists('packages\zlib.v140.windesktop.msvcstl.static.rt-dyn.1.2.8.8\build\native\zlib.v140.windesktop.msvcstl.static.rt-dyn.targets')" />
-    <Import Project="packages\openssl.v140.windesktop.msvcstl.static.rt-dyn.x64.1.0.2.1\build\native\openssl.v140.windesktop.msvcstl.static.rt-dyn.x64.targets" Condition="Exists('packages\openssl.v140.windesktop.msvcstl.static.rt-dyn.x64.1.0.2.1\build\native\openssl.v140.windesktop.msvcstl.static.rt-dyn.x64.targets')" />
-    <Import Project="packages\openssl.v140.windesktop.msvcstl.static.rt-dyn.x86.1.0.2.1\build\native\openssl.v140.windesktop.msvcstl.static.rt-dyn.x86.targets" Condition="Exists('packages\openssl.v140.windesktop.msvcstl.static.rt-dyn.x86.1.0.2.1\build\native\openssl.v140.windesktop.msvcstl.static.rt-dyn.x86.targets')" />
-  </ImportGroup>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
-    <PropertyGroup>
-      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
-    </PropertyGroup>
-    <Error Condition="!Exists('packages\zlib.v140.windesktop.msvcstl.static.rt-dyn.1.2.8.8\build\native\zlib.v140.windesktop.msvcstl.static.rt-dyn.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\zlib.v140.windesktop.msvcstl.static.rt-dyn.1.2.8.8\build\native\zlib.v140.windesktop.msvcstl.static.rt-dyn.targets'))" />
-    <Error Condition="!Exists('packages\openssl.v140.windesktop.msvcstl.static.rt-dyn.x64.1.0.2.1\build\native\openssl.v140.windesktop.msvcstl.static.rt-dyn.x64.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\openssl.v140.windesktop.msvcstl.static.rt-dyn.x64.1.0.2.1\build\native\openssl.v140.windesktop.msvcstl.static.rt-dyn.x64.targets'))" />
-    <Error Condition="!Exists('packages\openssl.v140.windesktop.msvcstl.static.rt-dyn.x86.1.0.2.1\build\native\openssl.v140.windesktop.msvcstl.static.rt-dyn.x86.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\openssl.v140.windesktop.msvcstl.static.rt-dyn.x86.1.0.2.1\build\native\openssl.v140.windesktop.msvcstl.static.rt-dyn.x86.targets'))" />
   </Target>
 </Project>

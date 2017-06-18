@@ -2,6 +2,8 @@
 
 #include <string>
 
+#include "redis-cplusplus-client/redisclient.h"
+
 #ifdef USE_DAEMON
 //#include <assert.h>
 //#ifdef assert
@@ -9,8 +11,6 @@
 //#endif
 //#define assert(x)	if(!x) throw std::runtime_error("assert")
 #endif // USE_DAEMON
-
-#include "redis-cplusplus-client/redisclient.h"
 
 class RedisClient
 {
@@ -55,4 +55,7 @@ public:
 	std::string		config_ftp_url;
 	std::string		config_camera_url;
 	std::string		config_channel;
+
+	std::string		config_db_host;
+	std::string		config_db_name;
 };
