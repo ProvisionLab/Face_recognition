@@ -19,7 +19,7 @@ class Person
 {
 public:
 
-	Person(unsigned char uuid[16], std::string const & sample_url, std::string const & features_json);
+	Person(unsigned char uuid[16], std::string const & person_desc, std::string const & features_json, long version);
 
 	void create_features(std::vector<uint8_t> const & fdata);
 
@@ -31,7 +31,7 @@ public:
 public:
 
 	unsigned char	person_id[16];
-	std::string		sample_url;
+	std::string		person_desc;
 
 	std::list<std::vector<float>>	features;
 
@@ -51,7 +51,6 @@ public:
 	PersonSet();
 	~PersonSet();
 
-	void load_from_ftp(std::string const & ftp_url);
 	bool load_from_sql(
 		std::string const & host, 
 		std::string const & db_name, 
@@ -61,9 +60,7 @@ public:
 
 	std::vector<PersonPtr> recognize(cv::Mat const & frame);
 
-	std::vector<cv::Mat> load_from_ftp(std::string const & ftp_url, std::string const & person_guid);
-
-	void store_id_to_sql_log(int camera_id, std::string const & person_id);
+	void store_id_to_sql_log(int camera_id, ODBC::UUID person_id);
 
 public:
 

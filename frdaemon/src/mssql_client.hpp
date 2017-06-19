@@ -16,8 +16,8 @@ public:
 
 public:
 
-	ODBC::UUID		persone_id;
-	std::string		sample_url;
+	ODBC::UUID		person_id;
+	std::string		person_desc;
 	std::string		key_features;
 	long solution_version = 0;
 
@@ -25,14 +25,18 @@ private:
 
 };
 
-class DbPersonInsertSample 
+class DbPersonQuerySamples
 	: protected ODBC::Stmt
 {
 public:
 
-	DbPersonInsertSample(ODBC::Connection &conn);
+	DbPersonQuerySamples(ODBC::Connection &conn, ODBC::UUID person_id);
 
-	void execute(ODBC::UUID person_id, std::string const & sample_url, std::string const & key_features, long solution_version);
+	bool next();
+
+public:
+
+	std::string		sample_url;
 };
 
 class DbPersonUpdateSample
@@ -52,5 +56,5 @@ public:
 
 	DbPersonInsertLog(ODBC::Connection &conn);
 
-	void execute(long camera_id, std::string const & person_id);
+	void execute(long camera_id, ODBC::UUID person_id);
 };

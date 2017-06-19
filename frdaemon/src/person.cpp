@@ -28,11 +28,16 @@ namespace fs = boost::filesystem;
 
 extern std::atomic<bool> sig_term;
 
-Person::Person(unsigned char uuid[16], std::string const & sample_url, std::string const & features_json)
-	: sample_url(sample_url)
+Person::Person(unsigned char uuid[16], std::string const & person_desc, std::string const & features_json, long version)
+	: person_desc(person_desc)
+	, version(version)
 {
 	memcpy(person_id, uuid, sizeof(person_id));
-	set_features_json(features_json);
+
+	if (version == SOLUTION_VERSION)
+	{
+		set_features_json(features_json);
+	}
 }
 
 void Person::create_features(std::vector<uint8_t> const & fdata)
@@ -134,92 +139,6 @@ PersonSet::~PersonSet()
 {
 }
 
-std::vector<cv::Mat> PersonSet::load_from_ftp(std::string const & ftp_url, std::string const & person_guid)
-{
-	FtpClient ftp;
-	ftp.ftp_url = ftp_url;
-
-	auto files = ftp.get_list(person_guid);
-
-	std::vector<cv::Mat> images;
-
-	for (auto & fn : files)
-	{
-		LOG_DEBUG("loading file: " << fn);
-		auto fdata = ftp.get_file(person_guid + "/" + fn);
-
-		if (!fdata.empty())
-		{
-			LOG_DEBUG(" ok, size: " << fdata.size() << std::endl);
-
-			try
-			{
-				cv::Mat image = cv::imdecode(cv::InputArray(fdata), -1);
-
-				if (!image.empty())
-				{
-					images.emplace_back(image);
-				}
-
-			}
-			catch (...)
-			{
-			}
-
-		}
-		else
-		{
-			LOG_DEBUG(" fail" << std::endl);
-		}
-	}
-
-	return std::move(images);
-}
-
-void PersonSet::load_from_ftp(std::string const & ftp_url)
-{
-	FtpClient ftp;
-	ftp.ftp_url = ftp_url;
-
-	auto persone_list = ftp.get_list("");
-
-	size_t memory_usage = 0;
-
-	for (auto & guid : persone_list)
-	{
-		LOG_DEBUG("person guid: " << guid << std::endl);
-
-		Person person({}, guid, "");
-
-		auto files = ftp.get_list(guid);
-		for (auto & fn : files)
-		{
-			if (sig_term)
-				return;
-
-			LOG_DEBUG("loading file: " << fn);
-			auto fdata = ftp.get_file(guid + "/" + fn);
-
-			if (!fdata.empty())
-			{
-				LOG_DEBUG(" ok, size: " << fdata.size() << std::endl);
-				person.create_features(fdata);
-			}
-			else
-			{
-				LOG_DEBUG(" fail" << std::endl);
-			}
-		}
-
-		if (!person.features.empty())
-		{
-			memory_usage += person.get_memory_usage();
-
-			persons.push_back(std::make_shared<Person>(std::move(person)));
-		}
-	}
-}
-
 std::vector<std::shared_ptr<Person>> PersonSet::recognize(cv::Mat const & frame)
 {
 	try
@@ -264,108 +183,67 @@ bool PersonSet::load_from_sql(
 		FtpClient ftp;
 		ftp.ftp_url = ftp_url;
 
-		bool ftp_access = false;
-		std::set<std::string>	ftp_persons;
+		// get person list
 
-		std::list<std::shared_ptr<Person>>	insert_list;
-		std::list<std::shared_ptr<Person>>	update_list;
-
-		int p_count = 0;
-		if (true)
 		{
 			DbPersonQuery query(m_sql_conn);
-
 			while (query.next())
 			{
-				++p_count;
-
-				// check if person have samples
-
-				if (query.solution_version != SOLUTION_VERSION)
-				{
-					if (!ftp_access)
-					{
-						auto person_list = ftp.get_list("");
-
-						for (auto & p : person_list)
-						{
-#ifdef _DEBUG
-							LOG_DEBUG("ftp samples for person " << p << "\n");
-#endif
-							ftp_persons.insert(p);
-						}
-
-						ftp_access = true;
-					}
-
-					if (ftp_persons.find(query.sample_url) == ftp_persons.cend())
-					{
-#ifdef _DEBUG
-						LOG_DEBUG("person " << query.sample_url << " has not samples\n");
-#endif
-						continue;
-					}
-
-					// old features, generate new
-
-					auto files = ftp.get_files(query.sample_url);
-					if (files.empty())
-						continue;
-
-					auto person = std::make_shared<Person>(query.persone_id, query.sample_url, "");
-
-					for (auto & fdata : files)
-					{
-						person->create_features(fdata);
-					}
-
-					if (person->features.empty())
-						continue;
-
-					if (query.solution_version < 0)
-						insert_list.push_back(person);
-					else
-						update_list.push_back(person);
-
-					person->version = query.solution_version;
-
-					persons.push_back(person);
-				}
-				else
-				{
-					auto person = std::make_shared<Person>(query.persone_id, query.sample_url, query.key_features);
-					if (person->features.empty())
-						continue;
-
-					LOG_DEBUG("person " << person->sample_url << " samples loaded\n");
-
-					persons.push_back(person);
-				}
+				auto person = std::make_shared<Person>(query.person_id, query.person_desc, query.key_features, query.solution_version);
+				persons.push_back(person);
 			}
 		}
 
-		// store new results
+		// update persons samples
 
-		for (auto & person : insert_list)
+		for (auto & person : persons)
 		{
-			LOG_DEBUG("person " << person->sample_url << " samples created\n");
+			if (person->version != SOLUTION_VERSION)
+			{
+				{
+					// get sample files
+					DbPersonQuerySamples q(m_sql_conn, person->person_id);
 
-			// insert recors
+					while (q.next())
+					{
+						auto fdata = ftp.get_file(q.sample_url);
 
-			DbPersonInsertSample q(m_sql_conn);
-			q.execute(person->person_id, person->sample_url, person->get_features_json(), SOLUTION_VERSION);
+						person->create_features(fdata);
+					}
+
+					if (!person->features.empty())
+						person->version = SOLUTION_VERSION;
+				}
+
+				if (person->version == SOLUTION_VERSION)
+				{
+					// update database
+					DbPersonUpdateSample q(m_sql_conn);
+					q.execute(person->person_id, person->get_features_json(), SOLUTION_VERSION);
+
+					LOG_DEBUG("person " << person->person_desc << " samples updated\n");
+				}
+				else
+				{
+					person.reset();
+				}
+			}
+			else
+			{
+				LOG_DEBUG("person " << person->person_desc << " samples loaded\n");
+			}
 		}
 
-		for (auto & person : update_list)
-		{
-			LOG_DEBUG("person " << person->sample_url << " samples updated\n");
+		LOG_DEBUG("total " << persons.size() << " persons checked\n");
 
-			// update record
-			DbPersonUpdateSample q(m_sql_conn);
-			q.execute(person->person_id, person->get_features_json(), SOLUTION_VERSION);
+		for (auto i = persons.begin(); i != persons.end();)
+		{
+			if (*i)
+				++i;
+			else
+				i = persons.erase(i);
 		}
 
-		LOG_DEBUG("total " << p_count << " persons checked\n");
 //		LOG_DEBUG(persons.size() << " persons loaded\n");
 
 		return true;
@@ -381,7 +259,7 @@ bool PersonSet::load_from_sql(
 	}
 }
 
-void PersonSet::store_id_to_sql_log(int camera_id, std::string const & person_id)
+void PersonSet::store_id_to_sql_log(int camera_id, ODBC::UUID person_id)
 {
 	DbPersonInsertLog q(m_sql_conn);
 
