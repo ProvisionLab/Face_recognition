@@ -40,7 +40,7 @@ Person::Person(unsigned char uuid[16], std::string const & person_desc, std::str
 	}
 }
 
-void Person::create_features(std::vector<uint8_t> const & fdata)
+void Person::append_features(std::vector<uint8_t> const & fdata)
 {
 	cv::Mat image;
 
@@ -54,7 +54,9 @@ void Person::create_features(std::vector<uint8_t> const & fdata)
 	{
 	}
 
-	features.emplace_back( generate_features_for_sample(image) );
+	auto features = generate_features_for_sample(image);
+	if (!features.empty())
+		features.emplace_back(std::move(features));
 }
 
 void Person::set_features_json(std::string const & json)
@@ -208,7 +210,7 @@ bool PersonSet::load_from_sql(
 					{
 						auto fdata = ftp.get_file(q.sample_url);
 
-						person->create_features(fdata);
+						person->append_features(fdata);
 					}
 
 					if (!person->features.empty())
@@ -236,6 +238,7 @@ bool PersonSet::load_from_sql(
 
 		LOG_DEBUG("total " << persons.size() << " persons checked\n");
 
+		// remove persons with invalid key_features
 		for (auto i = persons.begin(); i != persons.end();)
 		{
 			if (*i)

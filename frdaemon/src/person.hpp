@@ -21,7 +21,7 @@ public:
 
 	Person(unsigned char uuid[16], std::string const & person_desc, std::string const & features_json, long version);
 
-	void create_features(std::vector<uint8_t> const & fdata);
+	void append_features(std::vector<uint8_t> const & fdata);
 
 	void set_features_json(std::string const & json);
 	std::string get_features_json() const;
