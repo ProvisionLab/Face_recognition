@@ -54,9 +54,9 @@ void Person::append_features(std::vector<uint8_t> const & fdata)
 	{
 	}
 
-	auto features = generate_features_for_sample(image);
-	if (!features.empty())
-		features.emplace_back(std::move(features));
+	auto f = generate_features_for_sample(image);
+	if (!f.empty())
+		features.emplace_back(std::move(f));
 }
 
 void Person::set_features_json(std::string const & json)
@@ -198,6 +198,8 @@ bool PersonSet::load_from_sql(
 
 		// update persons samples
 
+		int u_count = 0;
+
 		for (auto & person : persons)
 		{
 			if (person->version != SOLUTION_VERSION)
@@ -224,6 +226,7 @@ bool PersonSet::load_from_sql(
 					q.execute(person->person_id, person->get_features_json(), SOLUTION_VERSION);
 
 					LOG_DEBUG("person " << person->person_desc << " samples updated\n");
+					++u_count;
 				}
 				else
 				{
@@ -236,7 +239,8 @@ bool PersonSet::load_from_sql(
 			}
 		}
 
-		LOG_DEBUG("total " << persons.size() << " persons checked\n");
+		LOG_DEBUG(persons.size() << " persons checked\n");
+		LOG_DEBUG(u_count << " persons updated\n");
 
 		// remove persons with invalid key_features
 		for (auto i = persons.begin(); i != persons.end();)
