@@ -114,12 +114,12 @@ void recognize(PersonSet & persons, RedisClient & redis)
 
 		for (auto & person : ps)
 		{
-			redis.person_found(person->sample_url);
+			redis.person_found(person->person_desc);
 
 #if STORE_RECOGNIZED_TO_LOGS
-			persons.store_id_to_sql_log(0, person->sample_url);
+			persons.store_id_to_sql_log(0, person->person_id);
 #endif
-			std::cout << person->sample_url << std::endl;
+			std::cout << person->person_desc << std::endl;
 		}
 
 		l.lock();
