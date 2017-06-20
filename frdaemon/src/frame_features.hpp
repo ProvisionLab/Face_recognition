@@ -4,6 +4,7 @@
 #include <vector>
 #include <set>
 #include <memory>
+#include <functional>
 
 #include <opencv2/opencv.hpp>
 
@@ -37,12 +38,14 @@ public:
 	void generate_features(cv::Mat const & m);
 
 	void compare_persons(std::list<std::shared_ptr<PersonFeatures>> const & persons);
+	void compare_persons(std::function<void(std::function<void(std::shared_ptr<PersonFeatures>)>)> enumerate_persons);
 
 	std::set<std::shared_ptr<PersonFeatures>> const & get_found_persons();
 
 private:
 
 	float compare(std::vector<float> const & person_features);
+	float compare(std::vector<float> const & frame_features, std::vector<float> const & person_features);
 
 	std::list<std::vector<float>>	features;
 
