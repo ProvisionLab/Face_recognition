@@ -2,7 +2,7 @@
 
 #include <random>
 
-std::vector<float> generate_features_for_sample(cv::Mat const & sample)
+std::vector<float> PersonFeatures::generate_features(cv::Mat const & sample)
 {
 	// 2do: generate features for sample image
 	cv::Mat image = sample.clone();
@@ -44,7 +44,14 @@ std::vector<float> generate_features_for_sample(cv::Mat const & sample)
 
     }
 
-	return{ SOLUTION_VERSION, 1, 1, 1, 1 };
+	return { SOLUTION_VERSION, 1, 1, 1, 1 };
+}
+
+void PersonFeatures::append_sample(cv::Mat const & sample)
+{
+	auto fs = generate_features(sample);
+	if (!fs.empty())
+		features.push_back(std::move(fs));
 }
 
 FrameFeatures::FrameFeatures()
@@ -98,14 +105,33 @@ void FrameFeatures::generate_features(cv::Mat const & m)
     }
 }
 
-bool FrameFeatures::contains_person(std::list<std::vector<float>> const & person_features)
+void FrameFeatures::compare_person(std::shared_ptr<PersonFeatures> person)
+{
+	for (auto & f : person->features)
+	{
+		append_distance(compare(f), person);
+	}
+}
+
+void FrameFeatures::append_distance(float dist, std::shared_ptr<PersonFeatures> person)
+{
+	if (dist < found_threshold)
+	{
+		found_persons.insert(person);
+	}
+}
+
+std::set<std::shared_ptr<PersonFeatures>> const & FrameFeatures::get_found_persons()
+{
+	return found_persons;
+}
+
+float FrameFeatures::compare(std::vector<float> const & person_features)
 {
 	// 2do: check if person is contained on frame
-
 	static std::default_random_engine rng(std::random_device{}());
 
-	return std::uniform_real_distribution<float>(0,100)(rng) < 2.0;
-
+	return std::uniform_real_distribution<float>(0, 100)(rng);
 }
 
 boost::shared_ptr<FaceInception::CascadeCNN>  FrameFeatures::detector;
