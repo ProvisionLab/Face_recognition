@@ -16,7 +16,7 @@ SOURCES = \
 	../src/redis-cplusplus-client/anet.c
 
 
-CPPFLAGS 	= -std=c++14 -D_DEFAULT_SOURCE 
+CPPFLAGS 	= -std=c++11 -D_DEFAULT_SOURCE 
 
 ifdef DEBUG
 CPPFLAGS 	+= -D_DEBUG -Og -ggdb -Wall -g

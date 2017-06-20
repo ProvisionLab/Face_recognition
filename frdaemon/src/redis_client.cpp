@@ -6,20 +6,20 @@
 std::vector<std::string> RedisClient::parse_line_list(std::string const & list)
 {
 	std::vector<std::string> subs;
-	boost::split(subs, list, [](auto c) { return c == '\n'; });
+	boost::split(subs, list, [](char c) { return c == '\n'; });
 	return subs;
 }
 
 std::map<std::string, std::string> RedisClient::parse_key_list(std::string const & list)
 {
 	std::vector<std::string> subs;
-	boost::split(subs, list, [](auto c) { return c == ' '; });
+	boost::split(subs, list, [](char c) { return c == ' '; });
 
 	std::map<std::string, std::string> values;
 	for (auto & p : subs)
 	{
 		std::vector<std::string> pair;
-		boost::split(pair, p, [](auto c) { return c == '='; });
+		boost::split(pair, p, [](char c) { return c == '='; });
 
 		values[pair[0]] = pair[1];
 	}
