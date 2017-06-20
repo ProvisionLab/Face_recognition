@@ -125,7 +125,7 @@ namespace FaceInception {
 
   @sa  warpPerspective, resize, remap, getRectSubPix, transform
   */
-  Mat cropImage(Mat& input_image, Rect2d roi, Size2d target_size, int flags = 1, int borderMode = 0, Scalar& borderValue = DEFAULT_SCALAR);
+  Mat cropImage(Mat& input_image, Rect2d roi, Size_<double> target_size, int flags = 1, int borderMode = 0, Scalar& borderValue = DEFAULT_SCALAR);
 
   //Only support 2 scaling
   Mat getPyramidStitchingImage2(Mat& input_image, std::vector<std::pair<Rect, double>>& location_and_scale, double scaling = 0.707,
