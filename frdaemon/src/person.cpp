@@ -146,6 +146,14 @@ std::vector<std::shared_ptr<Person>> PersonSet::recognize(cv::Mat const & frame)
 		FrameFeatures ff;
 		ff.generate_features(frame);
 
+#if 1
+		std::list<std::shared_ptr<PersonFeatures>> ls;
+		for (auto & p : persons)
+			ls.push_back(p);
+
+		ff.compare_persons(ls);
+
+#else		
 		for (auto & person : persons)
 		{
 			if (sig_term)
@@ -154,6 +162,7 @@ std::vector<std::shared_ptr<Person>> PersonSet::recognize(cv::Mat const & frame)
 			ff.compare_person(person);
 		}
 
+#endif
 		std::vector<std::shared_ptr<Person>> found;
 		for (auto & p : ff.get_found_persons())
 		{

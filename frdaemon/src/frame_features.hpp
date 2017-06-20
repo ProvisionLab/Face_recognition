@@ -36,15 +36,13 @@ public:
 
 	void generate_features(cv::Mat const & m);
 
-	void compare_person(std::shared_ptr<PersonFeatures> person);
+	void compare_persons(std::list<std::shared_ptr<PersonFeatures>> const & persons);
 
 	std::set<std::shared_ptr<PersonFeatures>> const & get_found_persons();
 
 private:
 
 	float compare(std::vector<float> const & person_features);
-
-	void append_distance(float dist, std::shared_ptr<PersonFeatures> person);
 
 	std::list<std::vector<float>>	features;
 

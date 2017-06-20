@@ -26,20 +26,25 @@ void FrameFeatures::generate_features(cv::Mat const & m)
 	// 2do: generate frame features from image
 }
 
-void FrameFeatures::compare_person(std::shared_ptr<PersonFeatures> person)
+void FrameFeatures::compare_persons(std::list<std::shared_ptr<PersonFeatures>> const & persons)
 {
-	for (auto & f : person->features)
-	{
-		append_distance(compare(f), person);
-	}
-}
+	std::vector<std::pair<float, std::shared_ptr<PersonFeatures>>> dists;
 
-void FrameFeatures::append_distance(float dist, std::shared_ptr<PersonFeatures> person)
-{
-	if (dist < found_threshold)
+	for (auto & person : persons)
 	{
-		found_persons.insert(person);
+		for (auto & f : person->features)
+		{
+			float dist = compare(f);
+			dists.push_back(std::make_pair(dist, person));
+		}
 	}
+
+	auto min_pair = std::min_element(dists.begin(), dists.end(), [](decltype(dists)::value_type &a, decltype(dists)::value_type &b) ->bool
+	{
+		return a.first < b.first;
+	});
+
+	found_persons.insert(min_pair->second);
 }
 
 std::set<std::shared_ptr<PersonFeatures>> const & FrameFeatures::get_found_persons()
