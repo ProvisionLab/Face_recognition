@@ -54,9 +54,7 @@ void Person::append_features(std::vector<uint8_t> const & fdata)
 	{
 	}
 
-	auto f = generate_features_for_sample(image);
-	if (!f.empty())
-		features.emplace_back(std::move(f));
+	append_sample(image);
 }
 
 void Person::set_features_json(std::string const & json)
@@ -145,8 +143,6 @@ std::vector<std::shared_ptr<Person>> PersonSet::recognize(cv::Mat const & frame)
 {
 	try
 	{
-		std::vector<std::shared_ptr<Person>> found;
-
 		FrameFeatures ff;
 		ff.generate_features(frame);
 
@@ -155,10 +151,13 @@ std::vector<std::shared_ptr<Person>> PersonSet::recognize(cv::Mat const & frame)
 			if (sig_term)
 				return{};
 
-			if (ff.contains_person(person->features))
-			{
-				found.push_back(person);
-			}
+			ff.compare_person(person);
+		}
+
+		std::vector<std::shared_ptr<Person>> found;
+		for (auto & p : ff.get_found_persons())
+		{
+			found.push_back(std::static_pointer_cast<Person>(p));
 		}
 
 		return found;

@@ -13,9 +13,12 @@
 
 #include <opencv2/opencv.hpp>
 
+#include "frame_features.hpp"
+
 /// contains samples for recognize person
 
-class Person
+class Person 
+	: public PersonFeatures
 {
 public:
 
@@ -32,8 +35,6 @@ public:
 
 	unsigned char	person_id[16];
 	std::string		person_desc;
-
-	std::list<std::vector<float>>	features;
 
 	long version = 0;
 
