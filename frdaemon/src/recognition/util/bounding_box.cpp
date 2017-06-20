@@ -269,7 +269,7 @@ double FaceInception::IoU(Rect2d rect, RotatedRect ellip, Size image_size) {
     return overlap / (rect_size + ellipse_size - overlap);
 }
 
-Mat FaceInception::cropImage(Mat &input_image, Rect2d roi, Size2d target_size, int flags, int borderMode, Scalar &borderValue) {
+Mat FaceInception::cropImage(Mat &input_image, Rect2d roi, Size_<double> target_size, int flags, int borderMode, Scalar &borderValue) {
     //Point2f srcPoints[4] = { Point2f(roi.x, roi.y), Point2f(roi.x + roi.width,roi.y), Point2f(roi.x,roi.y + roi.height),Point2f(roi.x + roi.width,roi.y + roi.height) };
     //Point2f dstPoints[4] = { Point2f(0,0), Point2f(target_size.width,0),Point2f(0, target_size.height), Point2f(target_size.width, target_size.height) };
     //Mat M2 = getAffineTransform(srcPoints, dstPoints);
