@@ -54,8 +54,6 @@ public:
 	static boost::shared_ptr<CaffeDetector> recognizer;
 private:
 
-	float compare(std::vector<float> const & person_features);
-
 	std::list<std::vector<float>>	features;
 
 	std::vector<std::vector<cv::Point2f> > src_points;
@@ -69,3 +67,4 @@ private:
 
 std::vector<float> generate_features_for_sample(cv::Mat const & sample);
 
+float euclidian_norm(std::vector<float> const & v1, std::vector<float> const & v2);

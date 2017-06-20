@@ -107,36 +107,32 @@ void FrameFeatures::generate_features(cv::Mat const & m)
 
 void FrameFeatures::compare_persons(std::list<std::shared_ptr<PersonFeatures>> const & persons)
 {
-	std::vector<std::pair<float, std::shared_ptr<PersonFeatures>>> dists;
+    for( auto & ff : features)
+    {    
+        std::vector<std::pair<float, std::shared_ptr<PersonFeatures>>> dists;
 
-	for (auto & person : persons)
-	{
-		for (auto & f : person->features)
-		{
-			float dist = compare(f);
-			dists.push_back(std::make_pair(dist, person));
-		}
-	}
+        for (auto & person : persons)
+        {
+            for (auto & f : person->features)
+            {
+                float dist = euclidian_norm(f,ff);
+                dists.push_back(std::make_pair(dist, person));
+            }
+        }
 
-	auto min_pair = std::min_element(dists.begin(), dists.end(), [](decltype(dists)::value_type &a, decltype(dists)::value_type &b) ->bool
-	{
-		return a.first < b.first;
-	});
+        auto min_pair = std::min_element(dists.begin(), dists.end(), [](decltype(dists)::value_type &a, decltype(dists)::value_type &b) ->bool
+        {
+            return a.first < b.first;
+        });
 
-	found_persons.insert(min_pair->second);
+        found_persons.insert(min_pair->second);
+    }
+	
 }
 
 std::set<std::shared_ptr<PersonFeatures>> const & FrameFeatures::get_found_persons()
 {
 	return found_persons;
-}
-
-float FrameFeatures::compare(std::vector<float> const & person_features)
-{
-	// 2do: check if person is contained on frame
-	static std::default_random_engine rng(std::random_device{}());
-
-	return std::uniform_real_distribution<float>(0, 100)(rng);
 }
 
 boost::shared_ptr<FaceInception::CascadeCNN>  FrameFeatures::detector;
@@ -154,4 +150,14 @@ void FrameFeatures::initialize()
                     				gpu_id));
 
 	recognizer.reset(new CaffeDetector("model/VGG_FACE_deploy4096_L2.prototxt", "model/VGG_FACE_4096.caffemodel",gpu_id));
+}
+
+float euclidian_norm(std::vector<float> const & v1, std::vector<float> const & v2)
+{
+    float res=0;
+    for(int i=0 ; i < v1.size() ; i++)
+    {
+        res += pow(fabs(v1[i]-v2[i]),2);
+    }
+    return sqrt(res);
 }
