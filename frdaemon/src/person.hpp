@@ -5,9 +5,9 @@
 #include <string>
 #include <cstdint>
 #include <map>
-#include <chrono>
 #include <vector>
 #include <list>
+#include <chrono>
 #include <memory>
 #include <fstream>
 
@@ -69,5 +69,7 @@ public:
 
 private:
 
-	ODBC::Connection m_sql_conn;
+	ODBC::Connection	m_sql_conn;
+
+	PersonFeaturesSet	m_persons_features;
 };

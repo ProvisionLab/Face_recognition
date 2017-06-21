@@ -9,9 +9,6 @@
 #include <condition_variable>
 #include <sstream>
 
-#include <boost/filesystem.hpp>
-namespace fs = boost::filesystem;
-
 #include "rapidjson/document.h"
 #include "rapidjson/writer.h"
 
@@ -116,7 +113,6 @@ std::string Person::get_features_json() const
 	return std::string(buffer.GetString(), buffer.GetLength());
 }
 
-
 size_t Person::get_memory_usage()
 {
 	size_t sz = sizeof(Person);
@@ -128,7 +124,6 @@ size_t Person::get_memory_usage()
 
 	return sz;
 }
-
 
 PersonSet::PersonSet()
 {
@@ -146,31 +141,17 @@ std::vector<std::shared_ptr<Person>> PersonSet::recognize(cv::Mat const & frame)
 		FrameFeatures ff;
 		ff.generate_features(frame);
 
-#if 0
-		std::list<std::shared_ptr<PersonFeatures>> ls;
-		for (auto & p : persons)
-			ls.push_back(p);
+		auto found = ff.compare_persons(m_persons_features);
 
-		ff.compare_persons(ls);
+		std::vector<std::shared_ptr<Person>> found2;
+		found2.reserve(found.size());
 
-#else	
-
-		ff.compare_persons([this](std::function<void(std::shared_ptr<PersonFeatures>)> action)
+		for (auto & p : found)
 		{
-			for (auto & person : persons)
-			{
-				action(person);
-			}
-		});
-
-#endif
-		std::vector<std::shared_ptr<Person>> found;
-		for (auto & p : ff.get_found_persons())
-		{
-			found.push_back(std::static_pointer_cast<Person>(p));
+			found2.push_back(std::static_pointer_cast<Person>(p));
 		}
 
-		return found;
+		return found2;
 	}
 	catch (...)
 	{
@@ -187,7 +168,6 @@ bool PersonSet::load_from_sql(
 {
 	try
 	{
-
 		if (!m_sql_conn.connect(host, db_name, db_username, db_password))
 			return false;
 
@@ -251,16 +231,38 @@ bool PersonSet::load_from_sql(
 		LOG_DEBUG(persons.size() << " persons checked\n");
 		LOG_DEBUG(u_count << " persons updated\n");
 
+#if TEST_PERSONS_COUNT
+		for (int i = 0; i < TEST_PERSONS_COUNT; ++i)
+		{
+			std::string desc("vp_" + std::to_string(i));
+			desc.resize(16, '_');
+
+			ODBC::UUID uuid = {};
+			memcpy(uuid, desc.data(), 16);
+
+			auto person = std::make_shared<Person>(uuid, desc, "", 0);
+			person->generate_random();
+			person->version = SOLUTION_VERSION;
+
+			persons.push_back(person);
+		}
+#endif
+
 		// remove persons with invalid key_features
+
+		std::vector<std::shared_ptr<PersonFeatures>> ps;
+
 		for (auto i = persons.begin(); i != persons.end();)
 		{
 			if (*i)
-				++i;
+				ps.push_back(*i++);
 			else
 				i = persons.erase(i);
 		}
 
 //		LOG_DEBUG(persons.size() << " persons loaded\n");
+
+		m_persons_features = std::move(PersonFeaturesSet(ps));
 
 		return true;
 	}
