@@ -10,6 +10,9 @@
 
 #define SOLUTION_VERSION	1
 
+//#define TEST_PERSONS_COUNT	1000
+#define TEST_FEATURES_COUNT	15
+
 class PersonFeatures
 {
 public:
@@ -20,6 +23,10 @@ public:
 
 	void append_sample(cv::Mat const & sample);
 
+#if TEST_PERSONS_COUNT && TEST_FEATURES_COUNT
+	void generate_random();
+#endif
+
 public:
 
 	std::list<std::vector<float>> features;
@@ -27,6 +34,34 @@ public:
 private:
 
 	static std::vector<float> generate_features(cv::Mat const & sample);
+};
+
+class PersonFeaturesSet
+{
+public:
+
+	PersonFeaturesSet() {}
+
+	PersonFeaturesSet(std::vector<std::shared_ptr<PersonFeatures>> const & ps);
+
+	PersonFeaturesSet(PersonFeaturesSet && pfs);
+
+	PersonFeaturesSet & operator = (PersonFeaturesSet && pfs);
+
+	std::shared_ptr<PersonFeatures>	find_nearest(std::vector<float> const & frame_features) const;
+
+#if TEST_PERSONS_COUNT
+	std::shared_ptr<PersonFeatures>	find_nearest_alt(std::vector<float> const & frame_features) const;
+#endif
+
+public:
+
+	std::vector<std::shared_ptr<PersonFeatures>>	persons;
+
+private:
+
+	const float found_threshold = 5000.0f;
+	static float compare(std::vector<float> const & frame_features, std::vector<float> const & person_features);
 };
 
 class FrameFeatures
@@ -37,19 +72,11 @@ public:
 
 	void generate_features(cv::Mat const & m);
 
-	void compare_persons(std::list<std::shared_ptr<PersonFeatures>> const & persons);
-	void compare_persons(std::function<void(std::function<void(std::shared_ptr<PersonFeatures>)>)> enumerate_persons);
-
-	std::set<std::shared_ptr<PersonFeatures>> const & get_found_persons();
+	std::set<std::shared_ptr<PersonFeatures>> compare_persons(PersonFeaturesSet const & ps);
 
 private:
 
-	float compare(std::vector<float> const & person_features);
-	float compare(std::vector<float> const & frame_features, std::vector<float> const & person_features);
-
 	std::list<std::vector<float>>	features;
 
-	const float found_threshold = 1.0f;
-
-	std::set<std::shared_ptr<PersonFeatures>>	found_persons;
 };
+
