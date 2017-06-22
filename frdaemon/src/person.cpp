@@ -159,7 +159,7 @@ std::vector<std::shared_ptr<Person>> PersonSet::recognize(cv::Mat const & frame)
 	}
 }
 
-bool PersonSet::load_from_sql(
+void PersonSet::load_from_sql(
 	std::string const & host, 
 	std::string const & db_name, 
 	std::string const & db_username, 
@@ -169,7 +169,7 @@ bool PersonSet::load_from_sql(
 	try
 	{
 		if (!m_sql_conn.connect(host, db_name, db_username, db_password))
-			return false;
+			throw std::runtime_error("no sqldb connection");
 
 		FtpClient ftp;
 		ftp.ftp_url = ftp_url;
@@ -231,8 +231,8 @@ bool PersonSet::load_from_sql(
 		LOG_DEBUG(persons.size() << " persons checked\n");
 		LOG_DEBUG(u_count << " persons updated\n");
 
-#if TEST_PERSONS_COUNT
-		for (int i = 0; i < TEST_PERSONS_COUNT; ++i)
+#if TEST_USE_PERSONS_COUNT
+		for (int i = 0; i < TEST_USE_PERSONS_COUNT; ++i)
 		{
 			std::string desc("vp_" + std::to_string(i));
 			desc.resize(16, '_');
@@ -263,8 +263,6 @@ bool PersonSet::load_from_sql(
 //		LOG_DEBUG(persons.size() << " persons loaded\n");
 
 		m_persons_features = std::move(PersonFeaturesSet(ps));
-
-		return true;
 	}
 	catch ( ODBC::Exception const & e )
 	{
@@ -273,7 +271,7 @@ bool PersonSet::load_from_sql(
 			LOG_DEBUG(m);
 		}
 
-		throw std::runtime_error("sql database");
+		throw std::runtime_error("sqldb internal error");
 	}
 }
 

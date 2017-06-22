@@ -52,7 +52,7 @@ public:
 	PersonSet();
 	~PersonSet();
 
-	bool load_from_sql(
+	void load_from_sql(
 		std::string const & host, 
 		std::string const & db_name, 
 		std::string const & db_username, 

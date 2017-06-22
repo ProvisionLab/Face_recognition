@@ -1,42 +1,42 @@
 #include "frame_features.hpp"
 
-#if TEST_PERSONS_COUNT
+#if TEST_USE_PERSONS_COUNT
 #include <iostream>
 #endif
 
-#if TEST_FEATURES_COUNT
+#if TEST_USE_RANDOM_FEATURES
 #include <random>
 static std::mt19937 g_rng(std::random_device{}());
-#endif // TEST_FEATURES_COUNT
+#endif
 
 std::vector<float> PersonFeatures::generate_features(cv::Mat const & sample)
 {
 	// 2do: generate features for sample image
 
-#if TEST_FEATURES_COUNT
+#if TEST_USE_RANDOM_FEATURES
 
-	std::vector<float> ffs(TEST_FEATURES_COUNT);
+	std::vector<float> ffs(SOLUTION_FEATURES_COUNT);
 
-	for (int k = 0; k < TEST_FEATURES_COUNT; ++k)
+	for (int k = 0; k < SOLUTION_FEATURES_COUNT; ++k)
 	{
 		ffs[k] = std::uniform_real_distribution<float>(0, 100)(g_rng);
 	}
 
 	return ffs;
 
-#endif // TEST_FEATURES_COUNT
+#endif // TEST_USE_RANDOM_FEATURES
 }
 
-#if TEST_PERSONS_COUNT && TEST_FEATURES_COUNT
+#if TEST_USE_PERSONS_COUNT
 void PersonFeatures::generate_random()
 {
 	int n = std::uniform_int_distribution<int>(1, 2)(g_rng);
 
 	for (int i = 0; i < n; ++i)
 	{
-		std::vector<float> ffs(TEST_FEATURES_COUNT);
+		std::vector<float> ffs(SOLUTION_FEATURES_COUNT);
 
-		for (int k = 0; k < TEST_FEATURES_COUNT; ++k)
+		for (int k = 0; k < SOLUTION_FEATURES_COUNT; ++k)
 		{
 			ffs[k] = std::uniform_real_distribution<float>(0, 100)(g_rng);
 		}
@@ -45,7 +45,7 @@ void PersonFeatures::generate_random()
 	}
 
 }
-#endif // TEST_PERSONS_COUNT
+#endif // TEST_USE_PERSONS_COUNT
 
 void PersonFeatures::append_sample(cv::Mat const & sample)
 {
@@ -97,12 +97,12 @@ std::shared_ptr<PersonFeatures>	PersonFeaturesSet::find_nearest(std::vector<floa
 	return min_person;
 }
 
-#if TEST_PERSONS_COUNT
+#if TEST_USE_ALT_FNN
 std::shared_ptr<PersonFeatures>	PersonFeaturesSet::find_nearest_alt(std::vector<float> const & frame_features) const
 {
 	return find_nearest(frame_features);
 }
-#endif // TEST_PERSONS_COUNT
+#endif // TEST_USE_ALT_FNN
 
 float PersonFeaturesSet::compare(std::vector<float> const & frame_features, std::vector<float> const & person_features)
 {
@@ -127,22 +127,22 @@ void FrameFeatures::generate_features(cv::Mat const & m)
 {
 	// 2do: generate frame features from image
 
-#if TEST_FEATURES_COUNT
+#if TEST_USE_RANDOM_FEATURES
 
 	int n = std::uniform_int_distribution<int>(0, 3)(g_rng);
 
 	for (int i = 0; i < n; ++i)
 	{
-		std::vector<float> ffs(TEST_FEATURES_COUNT);
+		std::vector<float> ffs(SOLUTION_FEATURES_COUNT);
 
-		for (int k = 0; k < TEST_FEATURES_COUNT; ++k)
+		for (int k = 0; k < SOLUTION_FEATURES_COUNT; ++k)
 		{
 			ffs[k] = std::uniform_real_distribution<float>(0, 100)(g_rng);
 		}
 
 		features.push_back(ffs);
 	}
-#endif // TEST_FEATURES_COUNT
+#endif // TEST_USE_RANDOM_FEATURES
 }
 
 std::set<std::shared_ptr<PersonFeatures>> FrameFeatures::compare_persons(PersonFeaturesSet const & ps)
@@ -153,7 +153,7 @@ std::set<std::shared_ptr<PersonFeatures>> FrameFeatures::compare_persons(PersonF
 	{
 		auto person = ps.find_nearest(ffs);
 
-#if TEST_PERSONS_COUNT
+#if TEST_USE_ALT_FNN
 		auto person_alt = ps.find_nearest_alt(ffs);
 		if (person != person_alt)
 		{

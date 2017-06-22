@@ -12,6 +12,14 @@
 //#define assert(x)	if(!x) throw std::runtime_error("assert")
 #endif // USE_DAEMON
 
+enum class RedisCommand
+{
+	Failed			= -1,
+	Recognized		= 0,
+	Status			= 1,
+	ConfigUpdate	= 2
+};
+
 class RedisClient
 {
 public:
@@ -29,10 +37,17 @@ public:
 	// return false if no free slots
 	bool get_configuration();
 
-	void person_found(std::string const & person_guid)
+	void person_found(std::string const & person_id)
 	{
-		redis_.publish(config_channel, person_guid);
+		send_message(RedisCommand::Recognized, person_id);
 	}
+
+	void send_error_status(std::string const & error_message)
+	{
+		send_message(RedisCommand::Failed, error_message);
+	}
+
+	void send_message(RedisCommand command, std::string const & message);
 
 	int get_client_id();
 
@@ -54,6 +69,7 @@ public:
 	std::string		config_key;
 	std::string		config_ftp_url;
 	std::string		config_camera_url;
+	std::string		config_camera_number;
 	std::string		config_channel;
 
 	std::string		config_db_host;

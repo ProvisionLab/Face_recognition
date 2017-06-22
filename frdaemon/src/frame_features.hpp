@@ -8,10 +8,13 @@
 
 #include <opencv2/opencv.hpp>
 
-#define SOLUTION_VERSION	1
+#define SOLUTION_VERSION		1
+#define SOLUTION_FEATURES_COUNT	4096u
 
-//#define TEST_PERSONS_COUNT	1000
-#define TEST_FEATURES_COUNT	15
+#define TEST_USE_RANDOM_FEATURES	1
+// uncomment this for generate virtual persons with random features
+//#define TEST_USE_PERSONS_COUNT		1000
+//#define TEST_USE_ALT_FNN			1
 
 class PersonFeatures
 {
@@ -23,7 +26,7 @@ public:
 
 	void append_sample(cv::Mat const & sample);
 
-#if TEST_PERSONS_COUNT && TEST_FEATURES_COUNT
+#if TEST_USE_PERSONS_COUNT
 	void generate_random();
 #endif
 
@@ -50,7 +53,7 @@ public:
 
 	std::shared_ptr<PersonFeatures>	find_nearest(std::vector<float> const & frame_features) const;
 
-#if TEST_PERSONS_COUNT
+#if TEST_USE_ALT_FNN
 	std::shared_ptr<PersonFeatures>	find_nearest_alt(std::vector<float> const & frame_features) const;
 #endif
 
