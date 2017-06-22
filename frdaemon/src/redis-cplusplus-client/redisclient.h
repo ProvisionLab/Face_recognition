@@ -34,7 +34,7 @@
 #include <errno.h>
 #ifdef _WIN32
 #define NOMINMAX
-#include <WinSock2.h>
+#include <WinSock.h>
 typedef int ssize_t;
 typedef unsigned short ushort;
 typedef unsigned long ulong;

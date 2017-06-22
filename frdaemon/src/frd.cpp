@@ -197,10 +197,7 @@ void run(std::string const & redis_host, std::string const & redis_port)
 
 		PersonSet persons;
 
-		persons.load_from_sql(
-			redis.config_db_host, redis.config_db_name,
-			config_db_username, config_db_password,
-			redis.config_ftp_url);
+		persons.load_from_sql(redis, config_db_username, config_db_password);
 	
 		LOG(LOG_INFO, persons.persons.size() << " persons loaded");
 

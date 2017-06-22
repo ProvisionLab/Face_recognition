@@ -1,8 +1,8 @@
+
 #include "person.hpp"
 
 #include "ftp_client.hpp"
 #include "frame_features.hpp"
-#include "redis_client.hpp"
 
 #include <thread>
 #include <mutex>
@@ -160,21 +160,15 @@ std::vector<std::shared_ptr<Person>> PersonSet::recognize(cv::Mat const & frame)
 	}
 }
 
-void PersonSet::load_from_sql(
-	RedisClient & redis,
-	std::string const & host, 
-	std::string const & db_name, 
-	std::string const & db_username, 
-	std::string const & db_password,
-	std::string const & ftp_url)
+void PersonSet::load_from_sql(RedisClient & redis, std::string const & db_username, std::string const & db_password)
 {
 	try
 	{
-		if (!m_sql_conn.connect(host, db_name, db_username, db_password))
+		if (!m_sql_conn.connect(redis.config_db_host, redis.config_db_name, db_username, db_password))
 			throw std::runtime_error("no sqldb connection");
 
 		FtpClient ftp;
-		ftp.ftp_url = ftp_url;
+		ftp.ftp_url =redis.config_ftp_url;
 
 		// get person list
 

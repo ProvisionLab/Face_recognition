@@ -1,6 +1,7 @@
 #pragma once
 
 #include "mssql_client.hpp"
+#include "redis_client.hpp"
 
 #include <string>
 #include <cstdint>
@@ -54,13 +55,7 @@ public:
 	PersonSet();
 	~PersonSet();
 
-	void load_from_sql(
-		RedisClient & redis,
-		std::string const & host,
-		std::string const & db_name, 
-		std::string const & db_username, 
-		std::string const & db_password,
-		std::string const & ftp_url);
+	void load_from_sql(RedisClient & redis, std::string const & db_username, std::string const & db_password);
 
 	std::vector<PersonPtr> recognize(cv::Mat const & frame);
 
