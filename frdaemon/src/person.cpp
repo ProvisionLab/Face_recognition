@@ -2,6 +2,7 @@
 
 #include "ftp_client.hpp"
 #include "frame_features.hpp"
+#include "redis_client.hpp"
 
 #include <thread>
 #include <mutex>
@@ -160,6 +161,7 @@ std::vector<std::shared_ptr<Person>> PersonSet::recognize(cv::Mat const & frame)
 }
 
 void PersonSet::load_from_sql(
+	RedisClient & redis,
 	std::string const & host, 
 	std::string const & db_name, 
 	std::string const & db_username, 
@@ -201,7 +203,14 @@ void PersonSet::load_from_sql(
 					{
 						auto fdata = ftp.get_file(q.sample_url);
 
-						person->append_features(fdata);
+						if (!fdata.empty())
+						{
+							person->append_features(fdata);
+						}
+						else
+						{
+							redis.send_error_status("ftp: get sample '" + q.sample_url + "' for person " + person->person_desc + " failed");
+						}
 					}
 
 					if (!person->features.empty())

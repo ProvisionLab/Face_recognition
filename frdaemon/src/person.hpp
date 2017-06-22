@@ -15,6 +15,8 @@
 
 #include "frame_features.hpp"
 
+class RedisClient;
+
 /// contains samples for recognize person
 
 class Person 
@@ -53,7 +55,8 @@ public:
 	~PersonSet();
 
 	void load_from_sql(
-		std::string const & host, 
+		RedisClient & redis,
+		std::string const & host,
 		std::string const & db_name, 
 		std::string const & db_username, 
 		std::string const & db_password,
