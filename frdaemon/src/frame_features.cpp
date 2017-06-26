@@ -133,7 +133,7 @@ std::shared_ptr<PersonFeatures>	PersonFeaturesSet::find_nearest(std::vector<floa
 			}
 		}
 	};
-
+	std::cout<<"Min dist="<<min_dist<<std::endl;
 	return min_person;
 }
 
@@ -179,7 +179,7 @@ void FrameFeatures::generate_features(cv::Mat const & m)
         cv::Point_<double> offset( deltaSize.width/2, deltaSize.height/2);
         result[i].first -= deltaSize;
         result[i].first += offset;
-
+	cv::rectangle(sample, result[i].first, cv::Scalar(255,0,0) );
         std::vector<cv::Point2f> temp_points;
 
         for (int p = 0; p < 5; p++)
@@ -191,7 +191,7 @@ void FrameFeatures::generate_features(cv::Mat const & m)
         src_points.push_back(temp_points);
 
     }
-
+    
     cv::Mat face;
 
     for(int i=0 ; i< result.size(); i++)
@@ -206,6 +206,10 @@ void FrameFeatures::generate_features(cv::Mat const & m)
         features.push_back(current_features);
 
     }
+
+    cv::resize(sample, sample, cv::Size(800,600));
+    cv::imshow("dbg", sample);
+    cv::waitKey(1);
 #if TEST_USE_RANDOM_FEATURES
 
 	int n = std::uniform_int_distribution<int>(0, 3)(g_rng);

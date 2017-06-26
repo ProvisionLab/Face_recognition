@@ -67,7 +67,7 @@ public:
 
 private:
 
-	const float found_threshold = 5000.0f;
+	const float found_threshold = 000.0f;
 	static float compare(std::vector<float> const & frame_features, std::vector<float> const & person_features);
 };
 

@@ -141,8 +141,6 @@ std::vector<std::shared_ptr<Person>> PersonSet::recognize(cv::Mat const & frame)
 	{
 		FrameFeatures ff;
 		ff.generate_features(frame);
-		cv::imshow("dbg", frame);
-		cv::waitKey(1);
 
 		auto found = ff.compare_persons(m_persons_features);
 
