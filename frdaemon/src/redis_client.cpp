@@ -97,14 +97,14 @@ bool RedisClient::get_configuration()
 		}
 	}
 
-	config_ftp_url = redis_.hget(config_key, "ftp");
-	config_camera_url = redis_.hget(config_key, "camera");
-	config_channel = redis_.hget(config_key, "channel");
+	config_ftp_url = redis_.hget(config_key, "Ftp");
+	config_camera_url = redis_.hget(config_key, "Camera");
+	config_channel = redis_.hget(config_key, "Channel");
 
 	//config_db_host = redis_.get("frd:db_host");
 	//config_db_name = redis_.get("frd:db_name");
-	config_db_host = redis_.hget(config_key, "db_host");
-	config_db_name = redis_.hget(config_key, "db_name");
+	config_db_host = redis_.hget(config_key, "DbHost");
+	config_db_name = redis_.hget(config_key, "DbName");
 
 	return true;
 }
