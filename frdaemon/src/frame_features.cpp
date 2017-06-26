@@ -141,7 +141,7 @@ cv::Mat FrameFeatures::target_mat = cv::Mat(224,224,CV_32FC1);
 
 void FrameFeatures::initialize()
 {
-	int gpu_id = -1;
+    int gpu_id = 0;
 	detector.reset(new FaceInception::CascadeCNN("model/det1-memory.prototxt", "model/det1.caffemodel",
 									"model/det1-memory-stitch.prototxt", "model/det1.caffemodel",
 									"model/det2-memory.prototxt", "model/det2.caffemodel",

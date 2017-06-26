@@ -35,10 +35,13 @@ LIBS 		+= -lopencv_core -lopencv_imgproc -lopencv_video -lopencv_highgui
 LIBS 		+= -lodbc
 LIBS 		+= -luuid
 LIBS		+= -lglog
-LIBS		+=  -L../src/caffe/build/lib -lcaffe
+LIBS		+= -L/usr/local/cuda/lib64 -lcudart -lcublas -lcurand
+LIBS		+= -L../src/caffe/build/lib -lcaffe
 
+INCLUDES	+= -I/usr/local/cuda/include
 INCLUDES	+= -I../src/caffe/build/src/caffe/proto
 INCLUDES	+= -I../src/caffe/include
+
 
 
 all: 	$(TARGET)

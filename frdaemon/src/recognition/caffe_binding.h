@@ -5,7 +5,7 @@
 #else
 #define CAFFE_DLL __declspec(dllimport)
 #endif
-#define CPU_ONLY
+//#define CPU_ONLY
 #define USE_OPENCV
 #include <opencv2/opencv.hpp>
 #include <string>
