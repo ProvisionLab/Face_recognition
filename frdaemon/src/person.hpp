@@ -1,19 +1,22 @@
 #pragma once
 
 #include "mssql_client.hpp"
+#include "redis_client.hpp"
 
 #include <string>
 #include <cstdint>
 #include <map>
-#include <chrono>
 #include <vector>
 #include <list>
+#include <chrono>
 #include <memory>
 #include <fstream>
 
 #include <opencv2/opencv.hpp>
 
 #include "frame_features.hpp"
+
+class RedisClient;
 
 /// contains samples for recognize person
 
@@ -52,12 +55,7 @@ public:
 	PersonSet();
 	~PersonSet();
 
-	bool load_from_sql(
-		std::string const & host, 
-		std::string const & db_name, 
-		std::string const & db_username, 
-		std::string const & db_password,
-		std::string const & ftp_url);
+	void load_from_sql(RedisClient & redis, std::string const & db_username, std::string const & db_password);
 
 	std::vector<PersonPtr> recognize(cv::Mat const & frame);
 
@@ -69,5 +67,7 @@ public:
 
 private:
 
-	ODBC::Connection m_sql_conn;
+	ODBC::Connection	m_sql_conn;
+
+	PersonFeaturesSet	m_persons_features;
 };

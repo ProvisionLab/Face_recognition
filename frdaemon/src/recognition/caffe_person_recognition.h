@@ -3,7 +3,7 @@
 #ifndef CAFFE_PERSON_DETECTOR_H
 #define CAFFE_PERSON_DETECTOR_H
 
-#define CPU_ONLY
+//#define CPU_ONLY
 #define USE_OPENCV
 #include <caffe/caffe.hpp>
 #include <caffe/layers/memory_data_layer.hpp>
