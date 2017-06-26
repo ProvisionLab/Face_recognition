@@ -6,6 +6,10 @@
 #include <memory>
 #include <functional>
 
+#include "recognition/TestFaceDetection.inc.h"
+#include "recognition/caffe_person_recognition.h"
+#include "recognition/util/help_functions.h"
+
 #include <opencv2/opencv.hpp>
 
 #define SOLUTION_VERSION		1
@@ -77,9 +81,20 @@ public:
 
 	std::set<std::shared_ptr<PersonFeatures>> compare_persons(PersonFeaturesSet const & ps);
 
+	static void initialize();
+	
+	static cv::Mat target_mat;
+	static boost::shared_ptr<FaceInception::CascadeCNN> detector;
+	static boost::shared_ptr<CaffeDetector> recognizer;
+
 private:
 
 	std::list<std::vector<float>>	features;
+
+	std::vector<std::vector<cv::Point2f> > src_points;
+	std::vector<std::vector<cv::Point2d>> points;
+
+	std::set<std::shared_ptr<PersonFeatures>>	found_persons;
 
 };
 

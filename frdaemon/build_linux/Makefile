@@ -26,22 +26,28 @@ ifdef DEBUG
 CPPFLAGS 	+= -D_DEBUG -Og -ggdb -Wall -g
 endif
 
+ifdef CPU_ONLY
+CPPFLAGS 	+= -DCPU_ONLY
+endif
+
 #CPPFLAGS 	+= -DUSE_DAEMON
 
 LIBS 		+= -lpthread
 LIBS 		+= -lboost_system -lboost_filesystem -lboost_thread
 LIBS 		+= -lcurl
-LIBS 		+= -lopencv_core -lopencv_imgproc -lopencv_video -lopencv_highgui
+LIBS 		+= -lopencv_core -lopencv_imgproc -lopencv_video -lopencv_highgui 
 LIBS 		+= -lodbc
 LIBS 		+= -luuid
 LIBS		+= -lglog
-LIBS		+= -L/usr/local/cuda/lib64 -lcudart -lcublas -lcurand
 LIBS		+= -L../src/caffe/build/lib -lcaffe
 
-INCLUDES	+= -I/usr/local/cuda/include
 INCLUDES	+= -I../src/caffe/build/src/caffe/proto
 INCLUDES	+= -I../src/caffe/include
 
+ifndef CPU_ONLY
+LIBS		+= -L/usr/local/cuda/lib64 -lcudart -lcublas -lcurand
+INCLUDES	+= -I/usr/local/cuda/include
+endif
 
 
 all: 	$(TARGET)

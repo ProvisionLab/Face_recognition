@@ -12,6 +12,44 @@ static std::mt19937 g_rng(std::random_device{}());
 std::vector<float> PersonFeatures::generate_features(cv::Mat const & sample)
 {
 	// 2do: generate features for sample image
+	cv::Mat image = sample.clone();
+	std::vector<std::vector<cv::Point2f> > src_points;
+	std::vector<std::vector<cv::Point2d>> points;
+    double min_face_size = 40;
+    auto result = FrameFeatures::detector->GetDetection(image, 12 / min_face_size, 0.7, true, 0.7, true, points);
+
+
+    for (int i = 0; i < result.size(); i++)
+    {
+        cv::Size_<double> deltaSize( result[i].first.width * 0.1f, result[i].first.height * 0.1f );
+        cv::Point_<double> offset( deltaSize.width/2, deltaSize.height/2);
+        result[i].first -= deltaSize;
+        result[i].first += offset;
+
+        std::vector<cv::Point2f> temp_points;
+
+        for (int p = 0; p < 5; p++)
+        {
+            if (p!=2)
+                temp_points.push_back(points[i][p]);
+        }
+
+        src_points.push_back(temp_points);
+
+    }
+
+    cv::Mat face;
+    std::vector<float> current_features;
+    for(int i=0 ; i< result.size(); i++)
+    {
+
+        std::chrono::time_point<std::chrono::system_clock> p3 = std::chrono::system_clock::now();
+
+        faceTransformRegard(image,face,src_points[i],result[i].first,FrameFeatures::target_mat);
+
+        current_features=std::move(FrameFeatures::recognizer->Detect(face));
+
+    }
 
 #if TEST_USE_RANDOM_FEATURES
 
@@ -25,6 +63,8 @@ std::vector<float> PersonFeatures::generate_features(cv::Mat const & sample)
 	return ffs;
 
 #endif // TEST_USE_RANDOM_FEATURES
+
+	return current_features;
 }
 
 #if TEST_USE_PERSONS_COUNT
@@ -126,7 +166,46 @@ FrameFeatures::FrameFeatures()
 void FrameFeatures::generate_features(cv::Mat const & m)
 {
 	// 2do: generate frame features from image
+	cv::Mat sample = m.clone();
+	src_points.clear();
+	points.clear();
+    double min_face_size = 40;
+    auto result = detector->GetDetection(sample, 12 / min_face_size, 0.7, true, 0.7, true, points);
 
+
+    for (int i = 0; i < result.size(); i++)
+    {
+        cv::Size_<double> deltaSize( result[i].first.width * 0.1f, result[i].first.height * 0.1f );
+        cv::Point_<double> offset( deltaSize.width/2, deltaSize.height/2);
+        result[i].first -= deltaSize;
+        result[i].first += offset;
+
+        std::vector<cv::Point2f> temp_points;
+
+        for (int p = 0; p < 5; p++)
+        {
+            if (p!=2)
+                temp_points.push_back(points[i][p]);
+        }
+
+        src_points.push_back(temp_points);
+
+    }
+
+    cv::Mat face;
+
+    for(int i=0 ; i< result.size(); i++)
+    {
+
+        std::chrono::time_point<std::chrono::system_clock> p3 = std::chrono::system_clock::now();
+
+        faceTransformRegard(sample,face,src_points[i],result[i].first,target_mat);
+
+        std::vector<float> current_features(recognizer->Detect(face));
+
+        features.push_back(current_features);
+
+    }
 #if TEST_USE_RANDOM_FEATURES
 
 	int n = std::uniform_int_distribution<int>(0, 3)(g_rng);
@@ -170,3 +249,23 @@ std::set<std::shared_ptr<PersonFeatures>> FrameFeatures::compare_persons(PersonF
 	return found_persons;
 }
 
+boost::shared_ptr<FaceInception::CascadeCNN>  FrameFeatures::detector;
+boost::shared_ptr<CaffeDetector> FrameFeatures::recognizer;
+cv::Mat FrameFeatures::target_mat = cv::Mat(224,224,CV_32FC1);
+
+void FrameFeatures::initialize()
+{
+#ifndef CPU_ONLY
+    int gpu_id = 0;
+#else
+    int gpu_id = -1;
+#endif
+	detector.reset(new FaceInception::CascadeCNN("model/det1-memory.prototxt", "model/det1.caffemodel",
+									"model/det1-memory-stitch.prototxt", "model/det1.caffemodel",
+									"model/det2-memory.prototxt", "model/det2.caffemodel",
+									"model/det3-memory.prototxt", "model/det3.caffemodel",
+									"model/det4-memory.prototxt", "model/det4.caffemodel",
+                    				gpu_id));
+
+	recognizer.reset(new CaffeDetector("model/VGG_FACE_deploy4096_L2.prototxt", "model/VGG_FACE_4096.caffemodel",gpu_id));
+}
