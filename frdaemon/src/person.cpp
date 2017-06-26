@@ -1,3 +1,4 @@
+
 #include "person.hpp"
 
 #include "ftp_client.hpp"
@@ -8,9 +9,6 @@
 #include <atomic>
 #include <condition_variable>
 #include <sstream>
-
-#include <boost/filesystem.hpp>
-namespace fs = boost::filesystem;
 
 #include "rapidjson/document.h"
 #include "rapidjson/writer.h"
@@ -116,7 +114,6 @@ std::string Person::get_features_json() const
 	return std::string(buffer.GetString(), buffer.GetLength());
 }
 
-
 size_t Person::get_memory_usage()
 {
 	size_t sz = sizeof(Person);
@@ -128,7 +125,6 @@ size_t Person::get_memory_usage()
 
 	return sz;
 }
-
 
 PersonSet::PersonSet()
 {
@@ -148,30 +144,17 @@ std::vector<std::shared_ptr<Person>> PersonSet::recognize(cv::Mat const & frame)
 		cv::imshow("dbg", frame);
 		cv::waitKey(1);
 
-#if 1
-		std::list<std::shared_ptr<PersonFeatures>> ls;
-		for (auto & p : persons)
-			ls.push_back(p);
+		auto found = ff.compare_persons(m_persons_features);
 
-		ff.compare_persons(ls);
+		std::vector<std::shared_ptr<Person>> found2;
+		found2.reserve(found.size());
 
-#else		
-		for (auto & person : persons)
+		for (auto & p : found)
 		{
-			if (sig_term)
-				return{};
-
-			ff.compare_person(person);
+			found2.push_back(std::static_pointer_cast<Person>(p));
 		}
 
-#endif
-		std::vector<std::shared_ptr<Person>> found;
-		for (auto & p : ff.get_found_persons())
-		{
-			found.push_back(std::static_pointer_cast<Person>(p));
-		}
-
-		return found;
+		return found2;
 	}
 	catch (...)
 	{
@@ -179,21 +162,15 @@ std::vector<std::shared_ptr<Person>> PersonSet::recognize(cv::Mat const & frame)
 	}
 }
 
-bool PersonSet::load_from_sql(
-	std::string const & host, 
-	std::string const & db_name, 
-	std::string const & db_username, 
-	std::string const & db_password,
-	std::string const & ftp_url)
+void PersonSet::load_from_sql(RedisClient & redis, std::string const & db_username, std::string const & db_password)
 {
 	try
 	{
-
-		if (!m_sql_conn.connect(host, db_name, db_username, db_password))
-			return false;
+		if (!m_sql_conn.connect(redis.config_db_host, redis.config_db_name, db_username, db_password))
+			throw std::runtime_error("no sqldb connection");
 
 		FtpClient ftp;
-		ftp.ftp_url = ftp_url;
+		ftp.ftp_url =redis.config_ftp_url;
 
 		// get person list
 
@@ -222,7 +199,14 @@ bool PersonSet::load_from_sql(
 					{
 						auto fdata = ftp.get_file(q.sample_url);
 
-						person->append_features(fdata);
+						if (!fdata.empty())
+						{
+							person->append_features(fdata);
+						}
+						else
+						{
+							redis.send_error_status("ftp: get sample '" + q.sample_url + "' for person " + person->person_desc + " failed");
+						}
 					}
 
 					if (!person->features.empty())
@@ -252,18 +236,38 @@ bool PersonSet::load_from_sql(
 		LOG_DEBUG(persons.size() << " persons checked\n");
 		LOG_DEBUG(u_count << " persons updated\n");
 
+#if TEST_USE_PERSONS_COUNT
+		for (int i = 0; i < TEST_USE_PERSONS_COUNT; ++i)
+		{
+			std::string desc("vp_" + std::to_string(i));
+			desc.resize(16, '_');
+
+			ODBC::UUID uuid = {};
+			memcpy(uuid, desc.data(), 16);
+
+			auto person = std::make_shared<Person>(uuid, desc, "", 0);
+			person->generate_random();
+			person->version = SOLUTION_VERSION;
+
+			persons.push_back(person);
+		}
+#endif
+
 		// remove persons with invalid key_features
+
+		std::vector<std::shared_ptr<PersonFeatures>> ps;
+
 		for (auto i = persons.begin(); i != persons.end();)
 		{
 			if (*i)
-				++i;
+				ps.push_back(*i++);
 			else
 				i = persons.erase(i);
 		}
 
 //		LOG_DEBUG(persons.size() << " persons loaded\n");
 
-		return true;
+		m_persons_features = std::move(PersonFeaturesSet(ps));
 	}
 	catch ( ODBC::Exception const & e )
 	{
@@ -272,7 +276,7 @@ bool PersonSet::load_from_sql(
 			LOG_DEBUG(m);
 		}
 
-		throw std::runtime_error("sql database");
+		throw std::runtime_error("sqldb internal error");
 	}
 }
 

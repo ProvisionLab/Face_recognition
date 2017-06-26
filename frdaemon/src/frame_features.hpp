@@ -4,16 +4,17 @@
 #include <vector>
 #include <set>
 #include <memory>
+#include <functional>
 
 #include <opencv2/opencv.hpp>
 
-#include <boost/shared_ptr.hpp>
+#define SOLUTION_VERSION		1
+#define SOLUTION_FEATURES_COUNT	4096u
 
-#include "recognition/TestFaceDetection.inc.h"
-#include "recognition/caffe_person_recognition.h"
-#include "recognition/util/help_functions.h"
-
-#define SOLUTION_VERSION	1
+#define TEST_USE_RANDOM_FEATURES	1
+// uncomment this for generate virtual persons with random features
+//#define TEST_USE_PERSONS_COUNT		1000
+//#define TEST_USE_ALT_FNN			1
 
 class PersonFeatures
 {
@@ -25,6 +26,10 @@ public:
 
 	void append_sample(cv::Mat const & sample);
 
+#if TEST_USE_PERSONS_COUNT
+	void generate_random();
+#endif
+
 public:
 
 	std::list<std::vector<float>> features;
@@ -32,6 +37,34 @@ public:
 private:
 
 	static std::vector<float> generate_features(cv::Mat const & sample);
+};
+
+class PersonFeaturesSet
+{
+public:
+
+	PersonFeaturesSet() {}
+
+	PersonFeaturesSet(std::vector<std::shared_ptr<PersonFeatures>> const & ps);
+
+	PersonFeaturesSet(PersonFeaturesSet && pfs);
+
+	PersonFeaturesSet & operator = (PersonFeaturesSet && pfs);
+
+	std::shared_ptr<PersonFeatures>	find_nearest(std::vector<float> const & frame_features) const;
+
+#if TEST_USE_ALT_FNN
+	std::shared_ptr<PersonFeatures>	find_nearest_alt(std::vector<float> const & frame_features) const;
+#endif
+
+public:
+
+	std::vector<std::shared_ptr<PersonFeatures>>	persons;
+
+private:
+
+	const float found_threshold = 5000.0f;
+	static float compare(std::vector<float> const & frame_features, std::vector<float> const & person_features);
 };
 
 class FrameFeatures
@@ -42,29 +75,11 @@ public:
 
 	void generate_features(cv::Mat const & m);
 
-	void compare_persons(std::list<std::shared_ptr<PersonFeatures>> const & persons);
+	std::set<std::shared_ptr<PersonFeatures>> compare_persons(PersonFeaturesSet const & ps);
 
-	std::set<std::shared_ptr<PersonFeatures>> const & get_found_persons();
-
-	static void initialize();
-
-	static cv::Mat target_mat;
-	
-	static boost::shared_ptr<FaceInception::CascadeCNN> detector;
-	static boost::shared_ptr<CaffeDetector> recognizer;
 private:
 
 	std::list<std::vector<float>>	features;
 
-	std::vector<std::vector<cv::Point2f> > src_points;
-	std::vector<std::vector<cv::Point2d>> points;
-
-	const float found_threshold = 1.0f;
-
-	std::set<std::shared_ptr<PersonFeatures>>	found_persons;
-
 };
 
-std::vector<float> generate_features_for_sample(cv::Mat const & sample);
-
-float euclidian_norm(std::vector<float> const & v1, std::vector<float> const & v2);

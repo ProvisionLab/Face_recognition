@@ -177,12 +177,12 @@ void daemonize()
 
 void run(std::string const & redis_host, std::string const & redis_port)
 {
+	RedisClient redis(redis_host, redis_port);
+
+	LOG(LOG_INFO, "reading configuration...");
+
 	try
 	{
-		RedisClient redis(redis_host, redis_port);
-
-		LOG(LOG_INFO, "reading configuration...");
-
 		if (!redis.get_configuration())
 		{
 			LOG(LOG_ERR, "there no free slots");
@@ -191,6 +191,7 @@ void run(std::string const & redis_host, std::string const & redis_port)
 
 		LOG(LOG_INFO, "slot id   : " << redis.config_key);
 		LOG(LOG_DEBUG, "camera url: " << redis.config_camera_url);
+		LOG(LOG_DEBUG, "camera num: " << redis.config_camera_number);
 		LOG(LOG_DEBUG, "ftp url   : " << redis.config_ftp_url);
 		LOG(LOG_DEBUG, "channel   : " << redis.config_channel);
 		LOG(LOG_DEBUG, "db_host   : " << redis.config_db_host);
@@ -200,30 +201,27 @@ void run(std::string const & redis_host, std::string const & redis_port)
 
 		PersonSet persons;
 
-		if (!persons.load_from_sql(
-			redis.config_db_host, redis.config_db_name,
-			config_db_username, config_db_password,
-			redis.config_ftp_url))
-		{
-			LOG(LOG_ERR, "no sql connection");
-			return;
-		}
-
+		persons.load_from_sql(redis, config_db_username, config_db_password);
+	
 		LOG(LOG_INFO, persons.persons.size() << " persons loaded");
 
-		if (persons.persons.empty())
+		if (!persons.persons.empty())
+		{
+			LOG(LOG_INFO, "start recognition...");
+
+			recognize(persons, redis);
+		}
+		else
 		{
 			LOG(LOG_INFO, "no person for recognition");
-			return;
+			redis.send_error_status("no person for recognition");
 		}
 
-		LOG(LOG_INFO, "start recognition...");
-
-		recognize(persons, redis);
 	}
 	catch (std::exception const & e)
 	{
 		LOG(LOG_ERR, "error: " << e.what());
+		redis.send_error_status(e.what());
 	}
 }
 
@@ -281,7 +279,14 @@ int main(int argc, char** argv)
 	{
 		sig_hup = false;
 
-		run(redis_host, redis_port);
+		try
+		{
+			run(redis_host, redis_port);
+		}
+		catch (std::exception &e)
+		{
+			LOG(LOG_ERR, "redis error: " << e.what());
+		}
 
 		// exit from run on error or sig_term or sig_hup
 
@@ -299,6 +304,7 @@ int main(int argc, char** argv)
 
 #ifdef _DEBUG
 		// do not run eternally while debug
+		LOG(LOG_DEBUG, "exit from DEBUG version");
 		break;
 #endif
 
