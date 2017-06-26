@@ -73,7 +73,7 @@ bool RedisClient::get_configuration()
 
 		// check if slot exists
 		
-		if (!redis_.hexists(key, "camera"))
+		if (!redis_.hexists(key, "Ñamera"))
 		{
 			config_key.clear();
 			return false;
