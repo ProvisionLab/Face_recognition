@@ -1,6 +1,10 @@
 #pragma once
 
 #include <string>
+#include <functional>
+#include <chrono>
+#include <map>
+#include <atomic>
 
 #include "redis-cplusplus-client/redisclient.h"
 
@@ -17,7 +21,9 @@ enum class RedisCommand
 	Failed			= -1,
 	Recognized		= 0,
 	Status			= 1,
-	ConfigUpdate	= 2
+	ConfigUpdate	= 2,
+	Start			= 3,
+	Stop			= 4
 };
 
 class RedisClient
@@ -27,7 +33,9 @@ public:
 	static const int REDIS_PORT = 6379;
 
 	RedisClient(std::string const &host, std::string const & port)
-		: redis_(host, port.empty() ? REDIS_PORT : std::stoi(port))
+		: host_(host)
+		, port_(port.empty() ? REDIS_PORT : std::stoi(port))
+		, redis_(host_, port_)
 	{
 	}
 
@@ -53,9 +61,18 @@ public:
 
 	void keep_alive();
 
+	void listen_sub(std::function<void(RedisCommand)> on_command);
+	void listen_sub_stop();
+
 private:
 
+	std::string		host_;
+	int				port_;
 	redis::client	redis_;
+
+	std::chrono::system_clock::time_point	m_last_keepalive;
+
+	std::atomic<int>	m_listen_socket = INVALID_SOCKET;
 
 	static std::map<std::string, std::string> parse_key_list(std::string const & list);
 	static std::vector<std::string> parse_line_list(std::string const & list);
@@ -65,12 +82,16 @@ public:
 	// configuration
 
 	int client_id = 0;
-	int keep_alive_threshold = 60;
+	int keep_alive_threshold	= 60;
+	int keep_alive_period		= 5;
+
 	std::string		config_key;
 	std::string		config_ftp_url;
 	std::string		config_camera_url;
 	std::string		config_camera_number;
-	std::string		config_channel;
+
+	std::string		config_report_channel;
+	std::string		config_listen_channel = "DaemonSystem";
 
 	std::string		config_db_host;
 	std::string		config_db_name;

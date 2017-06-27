@@ -33,6 +33,39 @@ void recognize(PersonSet & persons, RedisClient & redis)
 
 	volatile bool bThreadError = false;
 
+	std::atomic<bool> bPause = true;
+
+	std::thread listen_thread([&]() 
+	{
+		try
+		{
+			redis.listen_sub([&](RedisCommand cmd)
+			{
+				switch (cmd)
+				{
+				case RedisCommand::ConfigUpdate:
+					std::cout << "command: ConfigUpdate" << std::endl;
+					sig_hup = true;
+					break;
+
+				case RedisCommand::Start:
+					std::cout << "command: Start" << std::endl;
+					bPause = false;
+					break;
+
+				case RedisCommand::Stop:
+					std::cout << "command: Stop" << std::endl;
+					bPause = true;
+					break;
+				}
+			});
+		}
+		catch (...)
+		{
+			bThreadError = true;
+		}
+	});
+
 	std::thread recognoze_thread([&]()
 	{
 		// open camera
@@ -46,6 +79,16 @@ void recognize(PersonSet & persons, RedisClient & redis)
 
 				if (sig_term || sig_hup)
 					return;
+
+				if (bPause)
+				{
+					std::this_thread::sleep_for(std::chrono::seconds(2));
+					redis.keep_alive();
+#ifdef _DEBUG
+					std::cout << "pause" << std::endl;
+#endif
+					continue;
+				}
 
 				cv::Mat frame;
 				camera >> frame;
@@ -121,11 +164,14 @@ void recognize(PersonSet & persons, RedisClient & redis)
 		l.lock();
 	}
 
+	redis.listen_sub_stop();
+
 	if (bThreadError)
 	{
 		LOG(LOG_ERR, "error was ocured while recognize");
 	}
 
+	listen_thread.join();
 	recognoze_thread.join();
 }
 
@@ -189,7 +235,8 @@ void run(std::string const & redis_host, std::string const & redis_port)
 		LOG(LOG_DEBUG, "camera url: " << redis.config_camera_url);
 		LOG(LOG_DEBUG, "camera num: " << redis.config_camera_number);
 		LOG(LOG_DEBUG, "ftp url   : " << redis.config_ftp_url);
-		LOG(LOG_DEBUG, "channel   : " << redis.config_channel);
+		LOG(LOG_DEBUG, "report channel : " << redis.config_report_channel);
+		LOG(LOG_DEBUG, "listen channel : " << redis.config_listen_channel);
 		LOG(LOG_DEBUG, "db_host   : " << redis.config_db_host);
 		LOG(LOG_DEBUG, "db_name   : " << redis.config_db_name);
 

@@ -55,6 +55,7 @@ typedef void* BUFPTR;
 #include <stdexcept>
 #include <ctime>
 #include <sstream>
+#include <functional>
 
 #include <boost/concept_check.hpp>
 #include <boost/lexical_cast.hpp>
@@ -2137,20 +2138,20 @@ namespace redis
       }
     }
     
-    void shutdown(const connection_data & con)
-    {
-      send_(con.socket, makecmd("SHUTDOWN"));
+	void shutdown(const connection_data & con)
+	{
+		send_(con.socket, makecmd("SHUTDOWN"));
       
-      // we expected to get a connection_error as redis closes the connection on shutdown command.
+		// we expected to get a connection_error as redis closes the connection on shutdown command.
       
-      try
-      {
-        recv_ok_reply_(con.socket);
-      }
-      catch (connection_error & e)
-      {
-      }
-    }
+		try
+		{
+			recv_ok_reply_(con.socket);
+		}
+		catch (connection_error & e)
+		{
+		}
+	}
 
     void info(const connection_data & con, server_info & out)
     {
@@ -2228,23 +2229,58 @@ namespace redis
       return recv_int_reply_(socket);
     }
 
-#if 0 // currently unuseable
-    struct subscription_t
-    {
-      string_type channel;
-      boost::function<void (const string_type &)> callback;
-    };
+	struct sub_message_t
+	{
+		string_type type;
+		string_type channel;
+		string_type message;
+	};
 
-    void subscribe(const string_type & channel)
-    {
-      int socket = get_socket(channel);
-      
-    }
-#endif // 0 // currently unuseable
+	void subscribe(const string_type & channel, std::function<void(std::string const&)> respose)
+	{
+		int socket = get_socket(channel);
+		send_(socket, makecmd("SUBSCRIBE") << channel);
+
+		std::vector<std::string> replay;
+		recv_multi_bulk_reply_(socket, replay);
+
+		while (true)
+		{
+			std::vector<std::string> ss;
+			recv_multi_bulk_reply_(socket, ss);
+
+			if (ss.size() != 3)
+				break;
+
+			sub_message_t sm;
+
+			sm.type		= std::move(ss[0]);
+			sm.channel	= std::move(ss[1]);
+			sm.message	= std::move(ss[2]);
+
+			respose(sm.message);
+		}
+	}
+
+	static void stop_subscribe(int socket)
+	{
+		if (socket != INVALID_SOCKET)
+		{
+#ifdef _WIN32
+			::shutdown((SOCKET)socket, 0);// SD_RECEIVE);
+			::closesocket((SOCKET)socket);
+#else
+			// 2do: test this on linux
+			::shutdown(socket, SHUT_RD);
+			::close(socket);
+#endif
+		}
+	}
     
-  private:
-    base_client(const base_client &);
-    base_client & operator=(const base_client &);
+private:
+
+	base_client(const base_client &);
+	base_client & operator=(const base_client &);
 
 	void send_(int socket, const std::string & msg)
 	{
@@ -2295,64 +2331,100 @@ namespace redis
         throw protocol_error("expected OK response");
     }
     
-    int_type recv_bulk_reply_(int socket, char prefix)
-    {
-      std::string line = read_line(socket);
+	int_type recv_bulk_reply_(int socket, char prefix)
+	{
+		std::string line = read_line(socket);
       
 #ifndef NDEBUG
-      //output_proto_debug(line);
+		//output_proto_debug(line);
 #endif
+		if (line.empty())
+			throw protocol_error("invalid bulk reply; empty");
       
-      if (line[0] != prefix)
-      {
+		if (line[0] != prefix)
+		{
 #ifndef NDEBUG
-        std::cerr << "unexpected prefix for bulk reply (expected '" << prefix << "' but got '" << line[0] << "')" << std::endl;
+			std::cerr << "unexpected prefix for bulk reply (expected '" << prefix << "' but got '" << line[0] << "')" << std::endl;
 #endif // NDEBUG
-        throw protocol_error("unexpected prefix for bulk reply");
-      }
+			throw protocol_error("unexpected prefix for bulk reply");
+		}
       
-      return boost::lexical_cast<int_type>(line.substr(1));
-    }
-    
-    std::string recv_bulk_reply_(int socket)
-    {
-      int_type length = recv_bulk_reply_(socket, REDIS_PREFIX_SINGLE_BULK_REPLY );
-      
-      if (length == -1)
-        return missing_value();
-      
-      int_type real_length = length + 2;    // CRLF
-      
-      std::string data = read_n(socket, real_length);
-      
-#ifndef NDEBUG
-      //output_proto_debug(data.substr(0, data.length()-2));
-#endif
-      
-      if (data.empty())
-        throw protocol_error("invalid bulk reply data; empty");
-      
-      if (data.length() != static_cast<std::string::size_type>(real_length))
-        throw protocol_error("invalid bulk reply data; data of unexpected length");
-      
-      data.erase(data.size() - 2);
-      
-      return data;
-    }
+		return boost::lexical_cast<int_type>(line.substr(1));
+	}
+
+	private:
+
+		std::pair<char, int_type> recv_bulk_reply_prefix_(int socket)
+		{
+			std::string line = read_line(socket);
+
+	#ifndef NDEBUG
+			//output_proto_debug(line);
+	#endif
+			if (line.empty())
+				throw protocol_error("invalid bulk reply; empty");
+
+			return std::make_pair(line[0], boost::lexical_cast<int_type>(line.substr(1)));
+		}
+
+		std::string recv_bulk_string_(int socket, int_type length)
+		{
+			std::string data = read_n(socket, length);
+
+	#ifndef NDEBUG
+			//output_proto_debug(data.substr(0, data.length()-2));
+	#endif
+			if (data.empty())
+				throw protocol_error("invalid bulk reply data; empty");
+
+			if (data.length() != static_cast<std::string::size_type>(length))
+				throw protocol_error("invalid bulk reply data; data of unexpected length");
+
+			data.erase(data.size() - 2);
+
+			return data;
+		}
+
+public:	
+
+		std::string recv_bulk_reply_(int socket)
+		{
+			auto prefix = recv_bulk_reply_prefix_(socket);
+
+			if (prefix.first == REDIS_PREFIX_SINGLE_BULK_REPLY)
+			{
+				if (prefix.second == -1)
+					return missing_value();
+
+				int_type real_length = prefix.second + 2;    // CRLF
+
+				return recv_bulk_string_(socket, real_length);
+			}
+			else if (prefix.first == REDIS_PREFIX_INT_REPLY)
+			{
+				return std::to_string(prefix.second);
+			}
+			else
+			{
+				throw protocol_error("unexpected prefix for bulk reply");
+			}
+		}
     
     int_type recv_multi_bulk_reply_(int socket, string_vector & out)
     {
-      int_type length = recv_bulk_reply_(socket, REDIS_PREFIX_MULTI_BULK_REPLY);
+		int_type length = recv_bulk_reply_(socket, REDIS_PREFIX_MULTI_BULK_REPLY);
       
-      if (length == -1)
-        throw key_error("no such key");
+		if (length == -1)
+			throw key_error("no such key");
 
-      out.reserve( out.size()+length );
+		out.reserve( out.size()+length );
       
-      for (int_type i = 0; i < length; ++i)
-        out.push_back(recv_bulk_reply_(socket));
+		for (int_type i = 0; i < length; ++i)
+		{
+			out.push_back(recv_bulk_reply_(socket));
+		}
       
-      return length;
+		return length;
     }
     
     int_type recv_multi_bulk_reply_(int socket, string_set & out)
@@ -2485,26 +2557,25 @@ namespace redis
     }
     // Reads N bytes from given blocking socket.
     
-    std::string read_n(int socket, ssize_t n)
-    {
-      // changed char* to vector<char> buffer to don't leak memory on exceptions (and also because I hate this delete stuff)
-      // C++0x TODO: use a std::string here and it's non-const data() member instead of the vector<char> indirection
-      std::vector<char> buffer(n);
+	std::string read_n(int socket, ssize_t n)
+	{
+		std::string buffer;
+		buffer.resize(n);
 
-      char* buf_start = &buffer[0];
-      char* bp = buf_start;
-      ssize_t bytes_read = 0;
+		char* buf_start = const_cast<char*>(buffer.data());
+		char* bp = buf_start;
+		ssize_t bytes_read = 0;
       
-      while (bytes_read != n)
-      {
-        ssize_t bytes_received = recv_or_throw(socket, bp, n - (bp - buf_start), 0);
+		while (bytes_read != n)
+		{
+			ssize_t bytes_received = recv_or_throw(socket, bp, n - (bp - buf_start), 0);
         
-        bytes_read += bytes_received;
-        bp         += bytes_received;
-      }
+			bytes_read += bytes_received;
+			bp         += bytes_received;
+		}
       
-      return std::string( buf_start, n );
-    }
+		return buffer;
+	}
 
     reply_t next_reply_type(int socket)
     {

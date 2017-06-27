@@ -3,6 +3,8 @@
 #include <boost/algorithm/string.hpp>
 #include <chrono>
 
+#include "rapidjson/Document.h"
+
 std::vector<std::string> RedisClient::parse_line_list(std::string const & list)
 {
 	std::vector<std::string> subs;
@@ -73,7 +75,7 @@ bool RedisClient::get_configuration()
 
 		// check if slot exists
 		
-		if (!redis_.hexists(key, "camera"))
+		if (!redis_.hexists(key, "Camera"))
 		{
 			config_key.clear();
 			return false;
@@ -100,10 +102,8 @@ bool RedisClient::get_configuration()
 	config_ftp_url			= redis_.hget(config_key, "Ftp");
 	config_camera_url		= redis_.hget(config_key, "Camera");
 	config_camera_number	= redis_.hget(config_key, "CameraNumber");
-	config_channel			= redis_.hget(config_key, "Channel");
-
-	//config_db_host = redis_.get("frd:db_host");
-	//config_db_name = redis_.get("frd:db_name");
+	config_report_channel	= redis_.hget(config_key, "Channel");
+	//config_listen_channel	= redis_.hget(config_key, "ListenChannel");
 	config_db_host			= redis_.hget(config_key, "DbHost");
 	config_db_name			= redis_.hget(config_key, "DbName");
 
@@ -114,17 +114,69 @@ void RedisClient::keep_alive()
 {
 	if (!config_key.empty())
 	{
-		redis::command cmd = redis::makecmd("SET")
-			<< redis::key(config_key + ":lock")
-			<< std::to_string(client_id)
-			<< "EX" << keep_alive_threshold;
+		auto now_ = std::chrono::system_clock::now();
+
+		if ((now_ - m_last_keepalive) >= std::chrono::seconds(keep_alive_period))
+		{
+			redis::command cmd = redis::makecmd("SET")
+				<< redis::key(config_key + ":lock")
+				<< std::to_string(client_id)
+				<< "EX" << keep_alive_threshold;
+
+			m_last_keepalive = now_;
+		}
 	}
 }
 
 void RedisClient::send_message(RedisCommand command, std::string const & message)
 {
-	redis_.publish(config_channel, 
-		"{'CommandType':" + std::to_string((int)command) +
-		",'CameraNumber':" + config_camera_number + ",'Data':'" + message + "'}"
+	// 2do: use rapidjson
+
+	redis_.publish(config_report_channel,
+		"{"
+		"\"CommandType\":" + std::to_string((int)command) +	","
+		"\"CameraNumber\":" + config_camera_number + ","
+		"\"Data\":\"" + message + "\""
+		"}"
 	);
+}
+
+void RedisClient::listen_sub(std::function<void(RedisCommand)> on_command)
+{
+	redis::client	lr(host_, port_);
+
+	m_listen_socket = lr.get_socket(config_listen_channel);
+
+	lr.subscribe(config_listen_channel, [this, on_command](auto & message)
+	{
+		try
+		{
+			rapidjson::Document doc;
+			doc.Parse(message.c_str());
+
+			auto command = static_cast<RedisCommand>(doc["CommandType"].GetInt());
+
+			if (doc.HasMember("CameraNumber"))
+			{
+				auto camera_id = doc["CameraNumber"].GetInt();
+				if (camera_id >= 0 && camera_id != std::stoi(config_camera_number))
+					return;
+			}
+
+			on_command(command);
+		}
+		catch (...)
+		{
+			std::cerr << "invalid message from channel " << config_listen_channel << ": " << message << std::endl;
+		}
+	});
+
+	m_listen_socket = INVALID_SOCKET;
+}
+
+void RedisClient::listen_sub_stop()
+{
+	// 2do:
+	int socket = m_listen_socket;
+	redis::client::stop_subscribe(socket);
 }
