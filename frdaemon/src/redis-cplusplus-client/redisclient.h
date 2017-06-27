@@ -2250,7 +2250,12 @@ namespace redis
 			recv_multi_bulk_reply_(socket, ss);
 
 			if (ss.size() != 3)
+			{
+#ifdef _DEBUG
+				std::cout << "redis subscribe done" << std::endl;
+#endif
 				break;
+			}
 
 			sub_message_t sm;
 
@@ -2264,7 +2269,7 @@ namespace redis
 
 	static void stop_subscribe(int socket)
 	{
-		if (socket != INVALID_SOCKET)
+		if (socket >= 0)
 		{
 #ifdef _WIN32
 			::shutdown((SOCKET)socket, 0);// SD_RECEIVE);

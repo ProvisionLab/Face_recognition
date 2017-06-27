@@ -246,7 +246,7 @@ namespace ODBC {
 			if (!input.empty())
 			{
 				throw_on_error(SQLBindParameter(get(), index, SQL_PARAM_INPUT,
-					SQL_C_CHAR, SQL_VARCHAR, input.size(), 0, const_cast<char*>(input.c_str()), buflen, NULL));
+					SQL_C_CHAR, SQL_LONGVARCHAR, input.size(), 0, const_cast<char*>(input.c_str()), buflen, NULL));
 			}
 			else
 			{

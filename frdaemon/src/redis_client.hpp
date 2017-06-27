@@ -36,6 +36,7 @@ public:
 		: host_(host)
 		, port_(port.empty() ? REDIS_PORT : std::stoi(port))
 		, redis_(host_, port_)
+		, m_listen_socket(-1)
 	{
 	}
 
@@ -72,7 +73,7 @@ private:
 
 	std::chrono::system_clock::time_point	m_last_keepalive;
 
-	std::atomic<int>	m_listen_socket = INVALID_SOCKET;
+	std::atomic<int>	m_listen_socket;
 
 	static std::map<std::string, std::string> parse_key_list(std::string const & list);
 	static std::vector<std::string> parse_line_list(std::string const & list);

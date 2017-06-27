@@ -3,7 +3,8 @@
 #include <boost/algorithm/string.hpp>
 #include <chrono>
 
-#include "rapidjson/Document.h"
+#include "rapidjson/document.h"
+#include "rapidjson/writer.h"
 
 std::vector<std::string> RedisClient::parse_line_list(std::string const & list)
 {
@@ -130,15 +131,23 @@ void RedisClient::keep_alive()
 
 void RedisClient::send_message(RedisCommand command, std::string const & message)
 {
-	// 2do: use rapidjson
+	rapidjson::Document doc;
 
-	redis_.publish(config_report_channel,
-		"{"
-		"\"CommandType\":" + std::to_string((int)command) +	","
-		"\"CameraNumber\":" + config_camera_number + ","
-		"\"Data\":\"" + message + "\""
-		"}"
-	);
+	auto & allocator = doc.GetAllocator();
+
+	doc.SetObject();
+	doc.AddMember("CommandType", (int)command, allocator);
+	doc.AddMember("CameraNumber", std::stoi(config_camera_number), allocator);
+	doc.AddMember("Data", rapidjson::StringRef(message.data(), message.size()), allocator);
+
+	rapidjson::StringBuffer buffer;
+	buffer.Clear();
+
+	rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+	doc.Accept(writer);
+
+	std::string json(std::string(buffer.GetString(), buffer.GetLength()));
+	redis_.publish(config_report_channel, json);
 }
 
 void RedisClient::listen_sub(std::function<void(RedisCommand)> on_command)
@@ -171,7 +180,7 @@ void RedisClient::listen_sub(std::function<void(RedisCommand)> on_command)
 		}
 	});
 
-	m_listen_socket = INVALID_SOCKET;
+	m_listen_socket = -1;
 }
 
 void RedisClient::listen_sub_stop()

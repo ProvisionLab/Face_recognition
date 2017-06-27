@@ -33,7 +33,8 @@ void recognize(PersonSet & persons, RedisClient & redis)
 
 	volatile bool bThreadError = false;
 
-	std::atomic<bool> bPause = true;
+//	std::atomic<bool> bPause(true);
+	std::atomic<bool> bPause(false);
 
 	std::thread listen_thread([&]() 
 	{
@@ -57,6 +58,9 @@ void recognize(PersonSet & persons, RedisClient & redis)
 					std::cout << "command: Stop" << std::endl;
 					bPause = true;
 					break;
+
+				default:
+					std::cout << "command: "<< (int)cmd << std::endl;
 				}
 			});
 		}
@@ -133,37 +137,44 @@ void recognize(PersonSet & persons, RedisClient & redis)
 		}
 	});
 
-	std::unique_lock<std::mutex> l(mx_found);
-
-	while (!sig_term && !sig_hup && !bThreadError)
+	try
 	{
-		if (found.empty())
-		{
-			cv_found.wait_for(l, std::chrono::seconds(1));
+		std::unique_lock<std::mutex> l(mx_found);
 
+		while (!sig_term && !sig_hup && !bThreadError)
+		{
 			if (found.empty())
-				continue;
-		}
+			{
+				cv_found.wait_for(l, std::chrono::seconds(1));
 
-		std::list<PersonSet::PersonPtr> ps;
+				if (found.empty())
+					continue;
+			}
 
-		ps.splice(ps.end(), found);
+			std::list<PersonSet::PersonPtr> ps;
 
-		l.unlock();
+			ps.splice(ps.end(), found);
 
-		for (auto & person : ps)
-		{
-			redis.person_found(person->person_desc);
+			l.unlock();
+
+			for (auto & person : ps)
+			{
+				redis.person_found(person->person_desc);
 
 #if STORE_RECOGNIZED_TO_LOGS
-			persons.store_id_to_sql_log(0, person->person_id);
+				persons.store_id_to_sql_log(0, person->person_id);
 #endif
-			std::cout << person->person_desc << std::endl;
-		}
+				std::cout << person->person_desc << std::endl;
+			}
 
-		l.lock();
+			l.lock();
+		}
+	}
+	catch (...)
+	{
 	}
 
+	sig_hup = true;
 	redis.listen_sub_stop();
 
 	if (bThreadError)
