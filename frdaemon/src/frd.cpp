@@ -72,64 +72,74 @@ void recognize(PersonSet & persons, RedisClient & redis)
 
 	std::thread recognoze_thread([&]()
 	{
-		// open camera
 		try
 		{
-			cv::VideoCapture camera(redis.config_camera_url);
-
-			while (camera.isOpened())
+			while (!sig_term && !sig_hup)
 			{
-				// get camera frame
-
-				if (sig_term || sig_hup)
-					return;
-
 				if (bPause)
 				{
 					std::this_thread::sleep_for(std::chrono::seconds(2));
-					redis.keep_alive();
 #ifdef _DEBUG
 					std::cout << "pause" << std::endl;
 #endif
-					continue;
-				}
-
-				cv::Mat frame;
-				camera >> frame;
-
-				if (!frame.empty())
-				{
-					// recognize frame using persons
-
-					auto ps = persons.recognize(frame);
-
-					auto time = std::chrono::system_clock::now();
-
-					{
-						std::lock_guard<std::mutex> l(mx_found);
-
-						for (auto & person : ps)
-						{
-							if ((time - person->last_recognize_time) > std::chrono::seconds(config_person_recognition_period))
-							{
-								person->last_recognize_time = time;
-
-								found.push_back(person);
-							}
-						}
-
-						if (!found.empty())
-							cv_found.notify_one();
-					}
+					redis.keep_alive();
 				}
 				else
 				{
-					// sleep 1 sec in case of invalid camera capture
-					std::this_thread::sleep_for(std::chrono::seconds(1));
+					// open camera
+					cv::VideoCapture camera(redis.config_camera_url);
+
+					while (camera.isOpened())
+					{
+						// get camera frame
+
+						if (sig_term || sig_hup)
+							return;
+
+						if (bPause)
+							break;
+
+						cv::Mat frame;
+						camera >> frame;
+
+						if (!frame.empty())
+						{
+							// recognize frame using persons
+
+							auto ps = persons.recognize(frame);
+
+							auto time = std::chrono::system_clock::now();
+
+							{
+								std::lock_guard<std::mutex> l(mx_found);
+
+								for (auto & person : ps)
+								{
+									if ((time - person->last_recognize_time) > std::chrono::seconds(config_person_recognition_period))
+									{
+										person->last_recognize_time = time;
+
+										found.push_back(person);
+									}
+								}
+
+								if (!found.empty())
+									cv_found.notify_one();
+							}
+						}
+						else
+						{
+							// sleep 1 sec in case of invalid camera capture
+							std::this_thread::sleep_for(std::chrono::seconds(1));
+						}
+
+						redis.keep_alive();
+					} // while(camera.isOpened())
+
 				}
 
-				redis.keep_alive();
-			}
+			} // while
+
 		}
 		catch (...)
 		{

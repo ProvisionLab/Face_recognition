@@ -26,6 +26,11 @@ enum class RedisCommand
 	Stop			= 4
 };
 
+enum class ModuleType
+{
+	Face = 0,
+};
+
 class RedisClient
 {
 public:

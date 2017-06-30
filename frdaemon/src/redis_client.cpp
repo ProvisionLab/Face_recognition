@@ -136,7 +136,7 @@ void RedisClient::send_message(RedisCommand command, std::string const & message
 	auto & allocator = doc.GetAllocator();
 
 	doc.SetObject();
-	doc.AddMember("CommandType", (int)command, allocator);
+	doc.AddMember("Command", (int)command, allocator);
 	doc.AddMember("CameraNumber", std::stoi(config_camera_number), allocator);
 	doc.AddMember("Data", rapidjson::StringRef(message.data(), message.size()), allocator);
 
@@ -156,14 +156,21 @@ void RedisClient::listen_sub(std::function<void(RedisCommand)> on_command)
 
 	m_listen_socket = lr.get_socket(config_listen_channel);
 
-	lr.subscribe(config_listen_channel, [this, on_command](auto & message)
+	lr.subscribe(config_listen_channel, [this, on_command](std::string const & message)
 	{
 		try
 		{
 			rapidjson::Document doc;
 			doc.Parse(message.c_str());
 
-			auto command = static_cast<RedisCommand>(doc["CommandType"].GetInt());
+			if (doc.HasMember("Module"))
+			{
+				auto module_id = static_cast<ModuleType>(doc["Module"].GetInt());
+				if (module_id != ModuleType::Face)
+					return;
+			}
+
+			auto command = static_cast<RedisCommand>(doc["Command"].GetInt());
 
 			if (doc.HasMember("CameraNumber"))
 			{
