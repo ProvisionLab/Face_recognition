@@ -13,8 +13,8 @@
 
 #define TEST_USE_RANDOM_FEATURES	1
 // uncomment this for generate virtual persons with random features
-#define TEST_USE_PERSONS_COUNT		1000
-//#define TEST_USE_SAMPLES_COUNT		15
+#define TEST_USE_PERSONS_COUNT		10
+#define TEST_USE_SAMPLES_COUNT		15
 //#define TEST_USE_ALT_FNN			1
 
 class PersonFeatures

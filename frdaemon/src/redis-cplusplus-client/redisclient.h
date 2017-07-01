@@ -2354,7 +2354,7 @@ private:
 			throw protocol_error("unexpected prefix for bulk reply");
 		}
       
-		return boost::lexical_cast<int_type>(line.substr(1));
+		return std::stoi(line.substr(1));
 	}
 
 	private:
@@ -2445,40 +2445,40 @@ public:
       return length;
     }
 
-    template<typename INT_TYPE>
-    INT_TYPE recv_int_reply_(int socket)
-    {
-      std::string line = read_line(socket);
+	template<typename INT_TYPE>
+	INT_TYPE recv_int_reply_(int socket)
+	{
+		std::string line = read_line(socket);
       
       #ifndef NDEBUG
-      //output_proto_debug(line);
+		//output_proto_debug(line);
       #endif
       
-      if (line.empty())
-        throw protocol_error("invalid integer reply; empty");
+		if (line.empty())
+			throw protocol_error("invalid integer reply; empty");
       
-      if (line[0] != REDIS_PREFIX_INT_REPLY)
-        throw protocol_error("unexpected prefix for integer reply");
+		if (line[0] != REDIS_PREFIX_INT_REPLY)
+			throw protocol_error("unexpected prefix for integer reply");
       
-      return boost::lexical_cast<INT_TYPE>(line.substr(1));
-    }
+		return std::stol(line.substr(1));
+	}
     
-    int_type recv_int_reply_(int socket)
-    {
-      std::string line = read_line(socket);
+	int_type recv_int_reply_(int socket)
+	{
+		std::string line = read_line(socket);
       
 #ifndef NDEBUG
       //output_proto_debug(line);
 #endif
       
-      if (line.empty())
-        throw protocol_error("invalid integer reply; empty");
+		if (line.empty())
+			throw protocol_error("invalid integer reply; empty");
       
-      if (line[0] != REDIS_PREFIX_INT_REPLY)
-        throw protocol_error("unexpected prefix for integer reply");
+		if (line[0] != REDIS_PREFIX_INT_REPLY)
+			throw protocol_error("unexpected prefix for integer reply");
       
-      return boost::lexical_cast<int_type>(line.substr(1));
-    }
+		return std::stol(line.substr(1));
+	}
     
     void recv_int_ok_reply_(int socket)
     {

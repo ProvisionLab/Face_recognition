@@ -3,8 +3,7 @@
 #include <boost/algorithm/string.hpp>
 #include <chrono>
 
-#include "rapidjson/document.h"
-#include "rapidjson/writer.h"
+#include "SimpleJSON/json.hpp"
 
 std::vector<std::string> RedisClient::parse_line_list(std::string const & list)
 {
@@ -87,7 +86,7 @@ bool RedisClient::get_configuration()
 		redis::command cmd = redis::makecmd("SET")
 			<< redis::key(key + ":lock")
 			<< std::to_string(client_id)
-			<< "EX" << keep_alive_threshold
+			<< "EX" << lock_lifetime
 			<< "NX";
 
 		redis_.exec(cmd);
@@ -111,43 +110,50 @@ bool RedisClient::get_configuration()
 	return true;
 }
 
-void RedisClient::keep_alive()
+void RedisClient::keep_lock()
 {
 	if (!config_key.empty())
 	{
 		auto now_ = std::chrono::system_clock::now();
 
-		if ((now_ - m_last_keepalive) >= std::chrono::seconds(keep_alive_period))
+		if ((now_ - m_last_keeplock) >= std::chrono::seconds(relock_period))
 		{
 			redis::command cmd = redis::makecmd("SET")
 				<< redis::key(config_key + ":lock")
 				<< std::to_string(client_id)
-				<< "EX" << keep_alive_threshold;
+				<< "EX" << lock_lifetime;
 
-			m_last_keepalive = now_;
+			m_last_keeplock = now_;
 		}
 	}
 }
 
+void RedisClient::unlock_slot()
+{
+	redis_.del(config_key + ":lock");
+}
+
 void RedisClient::send_message(RedisCommand command, std::string const & message)
 {
-	rapidjson::Document doc;
+	auto obj = json::Object();
 
-	auto & allocator = doc.GetAllocator();
+	obj["Module"]		= (int)ModuleType::Face;
+	obj["CameraNumber"] = std::stoi(config_camera_number);
+	obj["Command"]		= (int)command;
+	obj["Data"]			= message;
 
-	doc.SetObject();
-	doc.AddMember("Command", (int)command, allocator);
-	doc.AddMember("CameraNumber", std::stoi(config_camera_number), allocator);
-	doc.AddMember("Data", rapidjson::StringRef(message.data(), message.size()), allocator);
+	std::string json = obj.dump();
 
-	rapidjson::StringBuffer buffer;
-	buffer.Clear();
+#ifdef _DEBUG
+	std::cout << json << std::endl;
+#endif
 
-	rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-	doc.Accept(writer);
-
-	std::string json(std::string(buffer.GetString(), buffer.GetLength()));
 	redis_.publish(config_report_channel, json);
+}
+
+void RedisClient::send_status(bool status)
+{
+	send_message(RedisCommand::Status, status ? "True" : "False");
 }
 
 void RedisClient::listen_sub(std::function<void(RedisCommand)> on_command)
@@ -160,26 +166,28 @@ void RedisClient::listen_sub(std::function<void(RedisCommand)> on_command)
 	{
 		try
 		{
-			rapidjson::Document doc;
-			doc.Parse(message.c_str());
+			auto obj = json::JSON::Load(message);
 
-			if (doc.HasMember("Module"))
+			if (obj.hasKey("Module"))
 			{
-				auto module_id = static_cast<ModuleType>(doc["Module"].GetInt());
+				auto module_id = static_cast<ModuleType>(obj["Module"].ToInt());
 				if (module_id != ModuleType::Face)
 					return;
 			}
 
-			auto command = static_cast<RedisCommand>(doc["Command"].GetInt());
-
-			if (doc.HasMember("CameraNumber"))
+			if (obj.hasKey("CameraNumber"))
 			{
-				auto camera_id = doc["CameraNumber"].GetInt();
+				auto camera_id = obj["CameraNumber"].ToInt();
 				if (camera_id >= 0 && camera_id != std::stoi(config_camera_number))
 					return;
 			}
 
-			on_command(command);
+			if (obj.hasKey("Command"))
+			{
+				auto command = static_cast<RedisCommand>(obj["Command"].ToInt());
+
+				on_command(command);
+			}
 		}
 		catch (...)
 		{

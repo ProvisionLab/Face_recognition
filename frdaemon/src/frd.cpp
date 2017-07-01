@@ -7,6 +7,7 @@
 #include <condition_variable>
 #include <atomic>
 #include <csignal>
+#include <queue>
 
 #include "log.h"
 
@@ -27,14 +28,16 @@ const int config_person_recognition_period = 5; // 5 seconds
 
 void recognize(PersonSet & persons, RedisClient & redis)
 {
-	std::list<PersonSet::PersonPtr>	found;
 	std::mutex mx_found;
 	std::condition_variable		cv_found;
 
+	std::list<PersonSet::PersonPtr>	found_persons;
+
 	volatile bool bThreadError = false;
 
-//	std::atomic<bool> bPause(true);
-	std::atomic<bool> bPause(false);
+	std::atomic<bool> bPause(true);
+
+	std::queue<RedisCommand>	incoming_commands;
 
 	std::thread listen_thread([&]() 
 	{
@@ -42,26 +45,11 @@ void recognize(PersonSet & persons, RedisClient & redis)
 		{
 			redis.listen_sub([&](RedisCommand cmd)
 			{
-				switch (cmd)
-				{
-				case RedisCommand::ConfigUpdate:
-					std::cout << "command: ConfigUpdate" << std::endl;
-					sig_hup = true;
-					break;
+				std::lock_guard<std::mutex> l(mx_found);
 
-				case RedisCommand::Start:
-					std::cout << "command: Start" << std::endl;
-					bPause = false;
-					break;
+				incoming_commands.push(cmd);
 
-				case RedisCommand::Stop:
-					std::cout << "command: Stop" << std::endl;
-					bPause = true;
-					break;
-
-				default:
-					std::cout << "command: "<< (int)cmd << std::endl;
-				}
+				cv_found.notify_one();
 			});
 		}
 		catch (...)
@@ -82,7 +70,7 @@ void recognize(PersonSet & persons, RedisClient & redis)
 #ifdef _DEBUG
 					std::cout << "pause" << std::endl;
 #endif
-					redis.keep_alive();
+					redis.keep_lock();
 				}
 				else
 				{
@@ -119,11 +107,11 @@ void recognize(PersonSet & persons, RedisClient & redis)
 									{
 										person->last_recognize_time = time;
 
-										found.push_back(person);
+										found_persons.push_back(person);
 									}
 								}
 
-								if (!found.empty())
+								if (!found_persons.empty())
 									cv_found.notify_one();
 							}
 						}
@@ -133,7 +121,7 @@ void recognize(PersonSet & persons, RedisClient & redis)
 							std::this_thread::sleep_for(std::chrono::seconds(1));
 						}
 
-						redis.keep_alive();
+						redis.keep_lock();
 					} // while(camera.isOpened())
 
 				}
@@ -153,20 +141,52 @@ void recognize(PersonSet & persons, RedisClient & redis)
 
 		while (!sig_term && !sig_hup && !bThreadError)
 		{
-			if (found.empty())
+			if (incoming_commands.empty() && found_persons.empty())
 			{
 				cv_found.wait_for(l, std::chrono::seconds(1));
-
-				if (found.empty())
-					continue;
+				continue;
 			}
 
-			std::list<PersonSet::PersonPtr> ps;
+			std::queue<RedisCommand> cmds(std::move(incoming_commands));
 
-			ps.splice(ps.end(), found);
+			std::list<PersonSet::PersonPtr> ps(std::move(found_persons));
 
 			l.unlock();
 
+			// process commands
+			while (!cmds.empty())
+			{
+				auto cmd = cmds.front();
+				cmds.pop();
+
+				switch (cmd)
+				{
+				case RedisCommand::ConfigUpdate:
+					std::cout << "command: ConfigUpdate" << std::endl;
+					sig_hup = true;
+					break;
+
+				case RedisCommand::Start:
+					std::cout << "command: Start" << std::endl;
+					bPause = false;
+					break;
+
+				case RedisCommand::Stop:
+					std::cout << "command: Stop" << std::endl;
+					bPause = true;
+					break;
+
+				case RedisCommand::Status:
+					std::cout << "command: Status" << std::endl;
+					redis.send_status(!bPause);
+					break;
+
+				default:
+					std::cout << "command: " << (int)cmd << std::endl;
+				}
+			}
+
+			// process persons
 			for (auto & person : ps)
 			{
 				redis.person_found(person->person_desc);
@@ -287,6 +307,8 @@ void run(std::string const & redis_host, std::string const & redis_port)
 		LOG(LOG_ERR, "error: " << e.what());
 		redis.send_error_status(e.what());
 	}
+
+	redis.unlock_slot();
 }
 
 int main(int argc, char** argv)

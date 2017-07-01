@@ -61,11 +61,12 @@ public:
 		send_message(RedisCommand::Failed, error_message);
 	}
 
-	void send_message(RedisCommand command, std::string const & message);
+	void send_status(bool status);
 
 	int get_client_id();
 
-	void keep_alive();
+	void keep_lock();
+	void unlock_slot();
 
 	void listen_sub(std::function<void(RedisCommand)> on_command);
 	void listen_sub_stop();
@@ -76,20 +77,22 @@ private:
 	int				port_;
 	redis::client	redis_;
 
-	std::chrono::system_clock::time_point	m_last_keepalive;
+	std::chrono::system_clock::time_point	m_last_keeplock;
 
 	std::atomic<int>	m_listen_socket;
 
 	static std::map<std::string, std::string> parse_key_list(std::string const & list);
 	static std::vector<std::string> parse_line_list(std::string const & list);
 
+	void send_message(RedisCommand command, std::string const & message);
+
 public:
 
 	// configuration
 
 	int client_id = 0;
-	int keep_alive_threshold	= 60;
-	int keep_alive_period		= 5;
+	int lock_lifetime	= 60;
+	int relock_period	= 5;
 
 	std::string		config_key;
 	std::string		config_ftp_url;
