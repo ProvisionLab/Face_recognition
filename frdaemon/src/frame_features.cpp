@@ -118,13 +118,15 @@ PersonFeaturesSet & PersonFeaturesSet::operator = (PersonFeaturesSet && pfs)
 
 std::shared_ptr<PersonFeatures>	PersonFeaturesSet::find_nearest(std::vector<float> const & frame_features) const
 {
-	float min_dist = 0;
+	float min_dist = 10000;
 	std::shared_ptr<PersonFeatures> min_person;
 
 	for (auto & person : persons)
 	{
+		std::cout<<"person check start"<<std::endl;
 		for (auto & pfs : person->features)
 		{
+			std::cout<<"Persons features check start"<<std::endl;
 			float distance = compare(frame_features, pfs);
 			if (distance < found_threshold && (!min_person || distance < min_dist))
 			{
@@ -154,7 +156,7 @@ float PersonFeaturesSet::compare(std::vector<float> const & frame_features, std:
 		float dx = frame_features[i] - person_features[i];
 		d2 += dx * dx;
 	}
-
+	std::cout<<"COMPARE RESULT="<<d2<<std::endl;
 	return d2;
 }
 

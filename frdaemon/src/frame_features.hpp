@@ -15,7 +15,7 @@
 #define SOLUTION_VERSION		1
 #define SOLUTION_FEATURES_COUNT	4096u
 
-#define TEST_USE_RANDOM_FEATURES	1
+//#define TEST_USE_RANDOM_FEATURES	1
 // uncomment this for generate virtual persons with random features
 //#define TEST_USE_PERSONS_COUNT		1000
 //#define TEST_USE_ALT_FNN			1
@@ -67,7 +67,7 @@ public:
 
 private:
 
-	const float found_threshold = 000.0f;
+	const float found_threshold = 500000.0f;
 	static float compare(std::vector<float> const & frame_features, std::vector<float> const & person_features);
 };
 
