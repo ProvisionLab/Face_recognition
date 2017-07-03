@@ -10,8 +10,7 @@
 #include <condition_variable>
 #include <sstream>
 
-#include "rapidjson/document.h"
-#include "rapidjson/writer.h"
+#include "SimpleJSON/json.hpp"
 
 #if !defined(USE_DAEMON) && defined(_DEBUG)
 
@@ -64,18 +63,16 @@ void Person::set_features_json(std::string const & json)
 
 	try
 	{
-		rapidjson::Document doc;
-		doc.Parse(json.c_str());
+		auto obj = json::JSON::Load(json);
 
-		if (!doc.IsArray() || doc.Empty())
+		if (obj.IsNull() || obj.JSONType() != json::JSON::Class::Array)
 			return;
 
-		auto jfss = doc.GetArray();
-		for (auto & jfs : jfss)
+		for (auto & jfs : obj.ArrayRange())
 		{
 			std::vector<float> fs;
-			for (auto & jf : jfs.GetArray())
-				fs.push_back(jf.GetFloat());
+			for (auto & jf : jfs.ArrayRange())
+				fs.push_back((float)jf.ToFloat());
 
 			features.push_back(std::move(fs));
 		}
@@ -87,31 +84,21 @@ void Person::set_features_json(std::string const & json)
 
 std::string Person::get_features_json() const
 {
-	rapidjson::Document doc;
-
-	auto & allocator = doc.GetAllocator();
-
-	doc.SetArray();
+	auto obj = json::Array();
 
 	for (auto & fs : features)
 	{
-		rapidjson::Value jfs(rapidjson::kArrayType);
+		auto jfs = json::Array();
 
-		for (auto & f : fs)
+		for (auto f : fs)
 		{
-			jfs.PushBack(f, allocator);
+			jfs.append(f);
 		}
 
-		doc.PushBack(jfs, allocator);
+		obj.append(jfs);
 	}
 
-	rapidjson::StringBuffer buffer;
-	buffer.Clear();
-
-	rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-	doc.Accept(writer);
-
-	return std::string(buffer.GetString(), buffer.GetLength());
+	return obj.dump();
 }
 
 size_t Person::get_memory_usage()

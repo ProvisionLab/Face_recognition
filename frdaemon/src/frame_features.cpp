@@ -55,7 +55,7 @@ std::vector<float> PersonFeatures::generate_features(cv::Mat const & sample)
 
 	std::vector<float> ffs(SOLUTION_FEATURES_COUNT);
 
-	for (int k = 0; k < SOLUTION_FEATURES_COUNT; ++k)
+	for (unsigned k = 0; k < SOLUTION_FEATURES_COUNT; ++k)
 	{
 		ffs[k] = std::uniform_real_distribution<float>(0, 100)(g_rng);
 	}
@@ -76,7 +76,7 @@ void PersonFeatures::generate_random()
 	{
 		std::vector<float> ffs(SOLUTION_FEATURES_COUNT);
 
-		for (int k = 0; k < SOLUTION_FEATURES_COUNT; ++k)
+		for (unsigned k = 0; k < SOLUTION_FEATURES_COUNT; ++k)
 		{
 			ffs[k] = std::uniform_real_distribution<float>(0, 100)(g_rng);
 		}
@@ -214,13 +214,17 @@ void FrameFeatures::generate_features(cv::Mat const & m)
     cv::waitKey(1);
 #if TEST_USE_RANDOM_FEATURES
 
-	int n = std::uniform_int_distribution<int>(0, 3)(g_rng);
+#if TEST_USE_SAMPLES_COUNT
+	unsigned nSamples = TEST_USE_SAMPLES_COUNT;
+#else
+	unsigned nSamples = std::uniform_int_distribution<int>(0, 15)(g_rng);
+#endif // TEST_USE_SAMPLES_COUNT
 
-	for (int i = 0; i < n; ++i)
+	for (unsigned i = 0; i < nSamples; ++i)
 	{
 		std::vector<float> ffs(SOLUTION_FEATURES_COUNT);
 
-		for (int k = 0; k < SOLUTION_FEATURES_COUNT; ++k)
+		for (unsigned k = 0; k < SOLUTION_FEATURES_COUNT; ++k)
 		{
 			ffs[k] = std::uniform_real_distribution<float>(0, 100)(g_rng);
 		}

@@ -7,6 +7,9 @@
 #include <atomic>
 #include <csignal>
 #include "frame_features.hpp"
+
+#include <queue>
+
 #include "log.h"
 
 #include "recognition/caffe_binding.h"
@@ -31,62 +34,29 @@ const int config_person_recognition_period = 5; // 5 seconds
 
 void recognize(PersonSet & persons, RedisClient & redis)
 {
-	std::list<PersonSet::PersonPtr>	found;
 	std::mutex mx_found;
 	std::condition_variable		cv_found;
 
+	std::list<PersonSet::PersonPtr>	found_persons;
+
 	volatile bool bThreadError = false;
 
-	std::thread recognoze_thread([&]()
+	std::atomic<bool> bPause(true);
+
+	std::queue<RedisCommand>	incoming_commands;
+
+	std::thread listen_thread([&]() 
 	{
-		// open camera
 		try
 		{
-			cv::VideoCapture camera(redis.config_camera_url);
-
-			while (camera.isOpened())
+			redis.listen_sub([&](RedisCommand cmd)
 			{
-				// get camera frame
+				std::lock_guard<std::mutex> l(mx_found);
 
-				if (sig_term || sig_hup)
-					return;
+				incoming_commands.push(cmd);
 
-				cv::Mat frame;
-				camera >> frame;
-
-				if (!frame.empty())
-				{
-					// recognize frame using persons
-
-					auto ps = persons.recognize(frame);
-
-					auto time = std::chrono::system_clock::now();
-
-					{
-						std::lock_guard<std::mutex> l(mx_found);
-
-						for (auto & person : ps)
-						{
-							if ((time - person->last_recognize_time) > std::chrono::seconds(config_person_recognition_period))
-							{
-								person->last_recognize_time = time;
-
-								found.push_back(person);
-							}
-						}
-
-						if (!found.empty())
-							cv_found.notify_one();
-					}
-				}
-				else
-				{
-					// sleep 1 sec in case of invalid camera capture
-					std::this_thread::sleep_for(std::chrono::seconds(1));
-				}
-
-				redis.keep_alive();
-			}
+				cv_found.notify_one();
+			});
 		}
 		catch (...)
 		{
@@ -94,42 +64,161 @@ void recognize(PersonSet & persons, RedisClient & redis)
 		}
 	});
 
-	std::unique_lock<std::mutex> l(mx_found);
-
-	while (!sig_term && !sig_hup && !bThreadError)
+	std::thread recognoze_thread([&]()
 	{
-		if (found.empty())
+		try
 		{
-			cv_found.wait_for(l, std::chrono::seconds(1));
+			while (!sig_term && !sig_hup)
+			{
+				if (bPause)
+				{
+					std::this_thread::sleep_for(std::chrono::seconds(2));
+#ifdef _DEBUG
+					std::cout << "pause" << std::endl;
+#endif
+					redis.keep_lock();
+				}
+				else
+				{
+					// open camera
+					cv::VideoCapture camera(redis.config_camera_url);
 
-			if (found.empty())
-				continue;
+					while (camera.isOpened())
+					{
+						// get camera frame
+
+						if (sig_term || sig_hup)
+							return;
+
+						if (bPause)
+							break;
+
+						cv::Mat frame;
+						camera >> frame;
+
+						if (!frame.empty())
+						{
+							// recognize frame using persons
+
+							auto ps = persons.recognize(frame);
+
+							auto time = std::chrono::system_clock::now();
+
+							{
+								std::lock_guard<std::mutex> l(mx_found);
+
+								for (auto & person : ps)
+								{
+									if ((time - person->last_recognize_time) > std::chrono::seconds(config_person_recognition_period))
+									{
+										person->last_recognize_time = time;
+
+										found_persons.push_back(person);
+									}
+								}
+
+								if (!found_persons.empty())
+									cv_found.notify_one();
+							}
+						}
+						else
+						{
+							// sleep 1 sec in case of invalid camera capture
+							std::this_thread::sleep_for(std::chrono::seconds(1));
+						}
+
+						redis.keep_lock();
+					} // while(camera.isOpened())
+
+				}
+
+			} // while
+
 		}
-
-		std::list<PersonSet::PersonPtr> ps;
-
-		ps.splice(ps.end(), found);
-
-		l.unlock();
-
-		for (auto & person : ps)
+		catch (...)
 		{
-			redis.person_found(person->person_desc);
+			bThreadError = true;
+		}
+	});
+
+	try
+	{
+		std::unique_lock<std::mutex> l(mx_found);
+
+		while (!sig_term && !sig_hup && !bThreadError)
+		{
+			if (incoming_commands.empty() && found_persons.empty())
+			{
+				cv_found.wait_for(l, std::chrono::seconds(1));
+				continue;
+			}
+
+			std::queue<RedisCommand> cmds(std::move(incoming_commands));
+
+			std::list<PersonSet::PersonPtr> ps(std::move(found_persons));
+
+			l.unlock();
+
+			// process commands
+			while (!cmds.empty())
+			{
+				auto cmd = cmds.front();
+				cmds.pop();
+
+				switch (cmd)
+				{
+				case RedisCommand::ConfigUpdate:
+					std::cout << "command: ConfigUpdate" << std::endl;
+					sig_hup = true;
+					break;
+
+				case RedisCommand::Start:
+					std::cout << "command: Start" << std::endl;
+					bPause = false;
+					break;
+
+				case RedisCommand::Stop:
+					std::cout << "command: Stop" << std::endl;
+					bPause = true;
+					break;
+
+				case RedisCommand::Status:
+					std::cout << "command: Status" << std::endl;
+					redis.send_status(!bPause);
+					break;
+
+				default:
+					std::cout << "command: " << (int)cmd << std::endl;
+				}
+			}
+
+			// process persons
+			for (auto & person : ps)
+			{
+				redis.person_found(person->person_desc);
 
 #if STORE_RECOGNIZED_TO_LOGS
-			persons.store_id_to_sql_log(0, person->person_id);
+				persons.store_id_to_sql_log(0, person->person_id);
 #endif
-			std::cout << person->person_desc << std::endl;
-		}
+				std::cout << person->person_desc << std::endl;
+			}
 
-		l.lock();
+			l.lock();
+		}
 	}
+	catch (...)
+	{
+	}
+
+	sig_hup = true;
+	redis.listen_sub_stop();
 
 	if (bThreadError)
 	{
 		LOG(LOG_ERR, "error was ocured while recognize");
 	}
 
+	listen_thread.join();
 	recognoze_thread.join();
 }
 
@@ -193,7 +282,8 @@ void run(std::string const & redis_host, std::string const & redis_port)
 		LOG(LOG_DEBUG, "camera url: " << redis.config_camera_url);
 		LOG(LOG_DEBUG, "camera num: " << redis.config_camera_number);
 		LOG(LOG_DEBUG, "ftp url   : " << redis.config_ftp_url);
-		LOG(LOG_DEBUG, "channel   : " << redis.config_channel);
+		LOG(LOG_DEBUG, "report channel : " << redis.config_report_channel);
+		LOG(LOG_DEBUG, "listen channel : " << redis.config_listen_channel);
 		LOG(LOG_DEBUG, "db_host   : " << redis.config_db_host);
 		LOG(LOG_DEBUG, "db_name   : " << redis.config_db_name);
 
@@ -223,6 +313,8 @@ void run(std::string const & redis_host, std::string const & redis_port)
 		LOG(LOG_ERR, "error: " << e.what());
 		redis.send_error_status(e.what());
 	}
+
+	redis.unlock_slot();
 }
 
 int main(int argc, char** argv)

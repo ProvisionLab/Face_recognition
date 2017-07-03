@@ -12,3 +12,19 @@ hset frd:0 db_name	<mssql database>
 
 frd:0:lock		- client creates this key to acquire slot. contains client id. do not create this key manualy!
 
+
+
+commands:
+
+// status
+publish DaemonSystem "{\"Command\":1, \"CameraNumber\": 1, \"Module\":0}"
+
+// config
+publish DaemonSystem "{\"Command\":2, \"CameraNumber\": 1, \"Module\":0}"
+
+// start
+publish DaemonSystem "{\"Command\":3, \"CameraNumber\": 1, \"Module\":0}"
+
+// stop
+publish DaemonSystem "{\"Command\":4, \"CameraNumber\": 1, \"Module\":0}"
+
