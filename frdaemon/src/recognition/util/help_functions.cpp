@@ -58,11 +58,11 @@ void faceTransformRegard(cv::Mat &face, cv::Mat &warp_dst, std::vector<cv::Point
  //   cv::Mat target1(112,96, CV_32FC1);
 //    cv::Mat target(224,224, CV_32FC1);
 
-
-    target_points.push_back(cv::Point2f(edge_x*ratio_x0, edge_y*ratio_y0));
-    target_points.push_back(cv::Point2f(edge_x*ratio_x1, edge_y*ratio_y1));
-    target_points.push_back(cv::Point2f(edge_x*ratio_x2, edge_y*ratio_y2));
-    target_points.push_back(cv::Point2f(edge_x*ratio_x3, edge_y*ratio_y3));
+	float shift  = (float) target_mat.rows * 0.1;
+    target_points.push_back(cv::Point2f(edge_x*ratio_x0, edge_y*ratio_y0+shift));
+    target_points.push_back(cv::Point2f(edge_x*ratio_x1, edge_y*ratio_y1+shift));
+    target_points.push_back(cv::Point2f(edge_x*ratio_x2, edge_y*ratio_y2+shift));
+    target_points.push_back(cv::Point2f(edge_x*ratio_x3, edge_y*ratio_y3+shift));
 
     cv::Mat const trans_mat = cv::getPerspectiveTransform(src_points, target_points);
     cv::warpPerspective(face, warp_dst, trans_mat,target_mat.size());

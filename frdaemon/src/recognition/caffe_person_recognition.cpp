@@ -8,9 +8,14 @@ CaffeDetector::CaffeDetector(const std::string prototxt_path, const std::string 
     //net_params >> net_prototxt >> net_model;
     //net_params.close();
     if (gpuid < 0)
+	{
+		std::cout<<"CPU MODE"<<std::endl;
         Caffe::set_mode(Caffe::CPU);
+	}
     else
     {
+
+		std::cout<<"GPU MODE"<<std::endl;
         Caffe::set_mode(Caffe::GPU);
         Caffe::SetDevice(gpuid);
     }

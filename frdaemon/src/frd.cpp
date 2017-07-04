@@ -81,7 +81,8 @@ void recognize(PersonSet & persons, RedisClient & redis)
 				else
 				{
 					// open camera
-					cv::VideoCapture camera(redis.config_camera_url);
+					//cv::VideoCapture camera(redis.config_camera_url);
+					cv::VideoCapture camera(0);
 
 					while (camera.isOpened())
 					{

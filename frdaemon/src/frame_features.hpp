@@ -12,7 +12,7 @@
 
 #include <opencv2/opencv.hpp>
 
-#define SOLUTION_VERSION		1
+#define SOLUTION_VERSION		4
 #define SOLUTION_FEATURES_COUNT	4096u
 
 //#define TEST_USE_RANDOM_FEATURES	1

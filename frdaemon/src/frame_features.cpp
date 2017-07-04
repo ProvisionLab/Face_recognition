@@ -9,22 +9,26 @@
 static std::mt19937 g_rng(std::random_device{}());
 #endif
 
+#include <chrono>
+
+
 std::vector<float> PersonFeatures::generate_features(cv::Mat const & sample)
 {
 	// 2do: generate features for sample image
 	cv::Mat image = sample.clone();
 	std::vector<std::vector<cv::Point2f> > src_points;
 	std::vector<std::vector<cv::Point2d>> points;
+
     double min_face_size = 40;
     auto result = FrameFeatures::detector->GetDetection(image, 12 / min_face_size, 0.7, true, 0.7, true, points);
 
 
     for (int i = 0; i < result.size(); i++)
     {
-        cv::Size_<double> deltaSize( result[i].first.width * 0.1f, result[i].first.height * 0.1f );
+        cv::Size_<double> deltaSize( result[i].first.width * 0.9f, result[i].first.height * 0.9f );
         cv::Point_<double> offset( deltaSize.width/2, deltaSize.height/2);
-        result[i].first -= deltaSize;
-        result[i].first += offset;
+        result[i].first += deltaSize;
+        result[i].first -= offset;
 
         std::vector<cv::Point2f> temp_points;
 
@@ -46,8 +50,11 @@ std::vector<float> PersonFeatures::generate_features(cv::Mat const & sample)
         std::chrono::time_point<std::chrono::system_clock> p3 = std::chrono::system_clock::now();
 
         faceTransformRegard(image,face,src_points[i],result[i].first,FrameFeatures::target_mat);
-
+	std::chrono::time_point<std::chrono::system_clock> p = std::chrono::system_clock::now();
         current_features=std::move(FrameFeatures::recognizer->Detect(face));
+			std::cout<<"VGG time="<<(float) std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - p).count() / 1000 <<"ms"<<std::endl;
+		cv::imshow("face", face);
+		cv::waitKey(1000);
 
     }
 
@@ -118,6 +125,7 @@ PersonFeaturesSet & PersonFeaturesSet::operator = (PersonFeaturesSet && pfs)
 
 std::shared_ptr<PersonFeatures>	PersonFeaturesSet::find_nearest(std::vector<float> const & frame_features) const
 {
+	std::chrono::time_point<std::chrono::system_clock> p = std::chrono::system_clock::now();
 	float min_dist = 10000;
 	std::shared_ptr<PersonFeatures> min_person;
 
@@ -136,6 +144,8 @@ std::shared_ptr<PersonFeatures>	PersonFeaturesSet::find_nearest(std::vector<floa
 		}
 	};
 	std::cout<<"Min dist="<<min_dist<<std::endl;
+	
+	std::cout<<"FULL REC TIME time="<<(float) std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - p).count() / 1000 <<"ms"<<std::endl;
 	return min_person;
 }
 
@@ -171,17 +181,19 @@ void FrameFeatures::generate_features(cv::Mat const & m)
 	cv::Mat sample = m.clone();
 	src_points.clear();
 	points.clear();
+
     double min_face_size = 40;
     auto result = detector->GetDetection(sample, 12 / min_face_size, 0.7, true, 0.7, true, points);
 
 
     for (int i = 0; i < result.size(); i++)
     {
-        cv::Size_<double> deltaSize( result[i].first.width * 0.1f, result[i].first.height * 0.1f );
+        cv::Size_<double> deltaSize( result[i].first.width * 0.9f, result[i].first.height * 0.9f );
         cv::Point_<double> offset( deltaSize.width/2, deltaSize.height/2);
-        result[i].first -= deltaSize;
-        result[i].first += offset;
-	cv::rectangle(sample, result[i].first, cv::Scalar(255,0,0) );
+        result[i].first += deltaSize;
+        result[i].first -= offset;
+
+		cv::rectangle(sample, result[i].first, cv::Scalar(255,0,0) );
         std::vector<cv::Point2f> temp_points;
 
         for (int p = 0; p < 5; p++)
@@ -202,9 +214,9 @@ void FrameFeatures::generate_features(cv::Mat const & m)
         std::chrono::time_point<std::chrono::system_clock> p3 = std::chrono::system_clock::now();
 
         faceTransformRegard(sample,face,src_points[i],result[i].first,target_mat);
-
+		std::chrono::time_point<std::chrono::system_clock> p = std::chrono::system_clock::now();
         std::vector<float> current_features(recognizer->Detect(face));
-
+					std::cout<<"VGG time="<<(float) std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - p).count() / 1000 <<"ms"<<std::endl;
         features.push_back(current_features);
 
     }
