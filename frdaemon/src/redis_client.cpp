@@ -77,6 +77,9 @@ bool RedisClient::get_configuration()
 		
 		if (!redis_.hexists(key, "Camera"))
 		{
+#ifdef _DEBUG
+			std::cerr << "key: " << key << " Camera not exists" << std::endl;
+#endif
 			config_key.clear();
 			return false;
 		}
