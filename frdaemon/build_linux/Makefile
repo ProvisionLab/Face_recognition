@@ -35,7 +35,7 @@ endif
 LIBS 		+= -lpthread
 LIBS 		+= -lboost_system -lboost_filesystem -lboost_thread
 LIBS 		+= -lcurl
-LIBS 		+= -lopencv_core -lopencv_imgproc -lopencv_video -lopencv_highgui 
+LIBS 		+= -L/usr/local/lib -lopencv_core -lopencv_imgproc -lopencv_videoio -lopencv_highgui  -lopencv_imgcodecs
 LIBS 		+= -lodbc
 LIBS 		+= -luuid
 LIBS		+= -lglog
