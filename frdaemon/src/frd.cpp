@@ -13,6 +13,8 @@
 
 #define STORE_RECOGNIZED_TO_LOGS 0
 
+#define USE_RECOGNIZE_IN_MAIN_THREAD 1
+
 #ifdef _WIN32
 static const std::string config_db_username = "casino_user";
 static const std::string config_db_password = "casino";
@@ -57,6 +59,107 @@ void recognize(PersonSet & persons, RedisClient & redis)
 			bThreadError = true;
 		}
 	});
+
+
+#if USE_RECOGNIZE_IN_MAIN_THREAD
+
+	bPause = false;
+
+	try
+	{
+		// open camera
+		cv::VideoCapture camera(redis.config_camera_url);
+
+		std::unique_lock<std::mutex> l(mx_found);
+
+		while (!sig_term && !sig_hup)
+		{
+			std::queue<RedisCommand> cmds(std::move(incoming_commands));
+
+			l.unlock();
+
+			// process commands
+			while (!cmds.empty())
+			{
+				auto cmd = cmds.front();
+				cmds.pop();
+
+				switch (cmd)
+				{
+				case RedisCommand::ConfigUpdate:
+					std::cout << "command: ConfigUpdate" << std::endl;
+					sig_hup = true;
+					break;
+
+				case RedisCommand::Start:
+					std::cout << "command: Start" << std::endl;
+					bPause = false;
+					break;
+
+				case RedisCommand::Stop:
+					std::cout << "command: Stop" << std::endl;
+					bPause = true;
+					break;
+
+				case RedisCommand::Status:
+					std::cout << "command: Status" << std::endl;
+					redis.send_status(!bPause);
+					break;
+
+				default:
+					std::cout << "command: " << (int)cmd << std::endl;
+				}
+			}
+
+			if (bPause)
+			{
+				std::this_thread::sleep_for(std::chrono::seconds(2));
+				redis.keep_lock();
+			}
+			else if (camera.isOpened())
+			{
+				// get camera frame
+
+				cv::Mat frame;
+				camera >> frame;
+
+				if (!frame.empty())
+				{
+					// recognize frame using persons
+
+					auto ps = persons.recognize(frame);
+
+					auto time = std::chrono::system_clock::now();
+
+					for (auto & person : ps)
+					{
+						if ((time - person->last_recognize_time) > std::chrono::seconds(config_person_recognition_period))
+						{
+							person->last_recognize_time = time;
+
+							redis.person_found(person->person_desc);
+							std::cout << person->person_desc << std::endl;
+						}
+					}
+				}
+				else
+				{
+					// sleep 1 sec in case of invalid camera capture
+					std::this_thread::sleep_for(std::chrono::seconds(1));
+				}
+
+				redis.keep_lock();
+			} 
+
+			l.lock();
+		} // while
+	}
+	catch (...)
+	{
+	}
+
+
+#else // !USE_RECOGNIZE_IN_MAIN_THREAD
 
 	std::thread recognoze_thread([&]()
 	{
@@ -204,6 +307,10 @@ void recognize(PersonSet & persons, RedisClient & redis)
 	{
 	}
 
+	recognoze_thread.join();
+
+#endif // USE_RECOGNIZE_IN_MAIN_THREAD
+
 	sig_hup = true;
 	redis.listen_sub_stop();
 
@@ -213,7 +320,6 @@ void recognize(PersonSet & persons, RedisClient & redis)
 	}
 
 	listen_thread.join();
-	recognoze_thread.join();
 }
 
 #ifdef USE_DAEMON
