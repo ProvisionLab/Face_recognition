@@ -25,21 +25,79 @@ static const std::string config_db_password = "Admin123!";
 
 std::atomic<bool>	sig_term(false);
 std::atomic<bool>	sig_hup(false);
+std::atomic<bool>	g_bPause(true);
 
 const int config_person_recognition_period = 5; // 5 seconds
+
+
+void process_commands(std::queue<RedisCommand> & commands, RedisClient & redis)
+{
+	// process commands
+	while (!commands.empty())
+	{
+		auto cmd = commands.front();
+		commands.pop();
+
+		switch (cmd)
+		{
+		case RedisCommand::ConfigUpdate:
+			std::cout << "command: ConfigUpdate" << std::endl;
+			sig_hup = true;
+			break;
+
+		case RedisCommand::Start:
+			std::cout << "command: Start" << std::endl;
+			g_bPause = false;
+			break;
+
+		case RedisCommand::Stop:
+			std::cout << "command: Stop" << std::endl;
+			g_bPause = true;
+			break;
+
+		case RedisCommand::Status:
+			std::cout << "command: Status" << std::endl;
+			redis.send_status(!g_bPause);
+			break;
+
+		default:
+			std::cout << "command: " << (int)cmd << std::endl;
+		}
+	}
+
+}
+
+std::list<PersonSet::PersonPtr> filter_found_persons(std::vector<PersonSet::PersonPtr> persons)
+{
+	std::list<PersonSet::PersonPtr> filtered;
+
+	auto time = std::chrono::system_clock::now();
+
+	for (auto & person : persons)
+	{
+		if ((time - person->last_recognize_time) > std::chrono::seconds(config_person_recognition_period))
+		{
+			person->last_recognize_time = time;
+
+			filtered.push_back(person);
+		}
+	}
+
+	return filtered;
+}
 
 void recognize(PersonSet & persons, RedisClient & redis)
 {
 	std::mutex mx_found;
 	std::condition_variable		cv_found;
 
-	std::list<PersonSet::PersonPtr>	found_persons;
-
 	volatile bool bThreadError = false;
 
-	std::atomic<bool> bPause(true);
-
 	std::queue<RedisCommand>	incoming_commands;
+
+#ifdef _DEBUG
+	g_bPause = false;
+#endif
 
 	std::thread listen_thread([&]() 
 	{
@@ -63,103 +121,79 @@ void recognize(PersonSet & persons, RedisClient & redis)
 
 #if USE_RECOGNIZE_IN_MAIN_THREAD
 
-	bPause = false;
-
 	try
 	{
-		// open camera
-		cv::VideoCapture camera(redis.config_camera_url);
-
-		std::unique_lock<std::mutex> l(mx_found);
-
 		while (!sig_term && !sig_hup)
 		{
-			std::queue<RedisCommand> cmds(std::move(incoming_commands));
-
-			l.unlock();
-
-			// process commands
-			while (!cmds.empty())
+			if (g_bPause)
 			{
-				auto cmd = cmds.front();
-				cmds.pop();
-
-				switch (cmd)
+				while (g_bPause && !sig_term && !sig_hup)
 				{
-				case RedisCommand::ConfigUpdate:
-					std::cout << "command: ConfigUpdate" << std::endl;
-					sig_hup = true;
-					break;
+					std::queue<RedisCommand> cmds;
+					{
+						std::unique_lock<std::mutex> l(mx_found);
+						cmds.swap(incoming_commands);
+					}
 
-				case RedisCommand::Start:
-					std::cout << "command: Start" << std::endl;
-					bPause = false;
-					break;
+					process_commands(cmds, redis);
 
-				case RedisCommand::Stop:
-					std::cout << "command: Stop" << std::endl;
-					bPause = true;
-					break;
-
-				case RedisCommand::Status:
-					std::cout << "command: Status" << std::endl;
-					redis.send_status(!bPause);
-					break;
-
-				default:
-					std::cout << "command: " << (int)cmd << std::endl;
+					std::this_thread::sleep_for(std::chrono::seconds(1));
+					redis.keep_lock();
 				}
 			}
-
-			if (bPause)
+			else 
 			{
-				std::this_thread::sleep_for(std::chrono::seconds(2));
-				redis.keep_lock();
-			}
-			else if (camera.isOpened())
-			{
-				// get camera frame
+				// open camera
+				cv::VideoCapture camera(redis.config_camera_url);
 
-				cv::Mat frame;
-				camera >> frame;
-
-				if (!frame.empty())
+				while (!g_bPause && !sig_term && !sig_hup && camera.isOpened())
 				{
-					// recognize frame using persons
-
-					auto ps = persons.recognize(frame);
-
-					auto time = std::chrono::system_clock::now();
-
-					for (auto & person : ps)
+					std::queue<RedisCommand> cmds;
 					{
-						if ((time - person->last_recognize_time) > std::chrono::seconds(config_person_recognition_period))
-						{
-							person->last_recognize_time = time;
+						std::unique_lock<std::mutex> l(mx_found);
+						cmds.swap(incoming_commands);
+					}
 
+					process_commands(cmds, redis);
+
+					// get camera frame
+
+					cv::Mat frame;
+					camera >> frame;
+
+					if (!frame.empty())
+					{
+						// recognize frame using persons
+
+						auto found_persons = filter_found_persons(persons.recognize(frame));
+
+						for (auto & person : found_persons)
+						{
 							redis.person_found(person->person_desc);
 							std::cout << person->person_desc << std::endl;
 						}
 					}
-				}
-				else
-				{
-					// sleep 1 sec in case of invalid camera capture
-					std::this_thread::sleep_for(std::chrono::seconds(1));
-				}
+					else
+					{
+						// sleep 1 sec in case of invalid camera capture
+						std::this_thread::sleep_for(std::chrono::seconds(1));
+					}
 
-				redis.keep_lock();
+					redis.keep_lock();
+
+				} // while
+
 			} 
 
-			l.lock();
 		} // while
 	}
 	catch (...)
 	{
 	}
 
-
 #else // !USE_RECOGNIZE_IN_MAIN_THREAD
+
+	std::list<PersonSet::PersonPtr>	found_persons;
 
 	std::thread recognoze_thread([&]()
 	{
@@ -199,20 +233,10 @@ void recognize(PersonSet & persons, RedisClient & redis)
 
 							auto ps = persons.recognize(frame);
 
-							auto time = std::chrono::system_clock::now();
-
 							{
 								std::lock_guard<std::mutex> l(mx_found);
 
-								for (auto & person : ps)
-								{
-									if ((time - person->last_recognize_time) > std::chrono::seconds(config_person_recognition_period))
-									{
-										person->last_recognize_time = time;
-
-										found_persons.push_back(person);
-									}
-								}
+								found_persons = filter_found_persons(ps);
 
 								if (!found_persons.empty())
 									cv_found.notify_one();
@@ -250,46 +274,19 @@ void recognize(PersonSet & persons, RedisClient & redis)
 				continue;
 			}
 
-			std::queue<RedisCommand> cmds(std::move(incoming_commands));
+			std::queue<RedisCommand> cmds;
+			cmds.swap(incoming_commands);
 
-			std::list<PersonSet::PersonPtr> ps(std::move(found_persons));
+			std::list<PersonSet::PersonPtr> ps;
+			ps.swap(found_persons);
 
 			l.unlock();
 
 			// process commands
-			while (!cmds.empty())
-			{
-				auto cmd = cmds.front();
-				cmds.pop();
-
-				switch (cmd)
-				{
-				case RedisCommand::ConfigUpdate:
-					std::cout << "command: ConfigUpdate" << std::endl;
-					sig_hup = true;
-					break;
-
-				case RedisCommand::Start:
-					std::cout << "command: Start" << std::endl;
-					bPause = false;
-					break;
-
-				case RedisCommand::Stop:
-					std::cout << "command: Stop" << std::endl;
-					bPause = true;
-					break;
-
-				case RedisCommand::Status:
-					std::cout << "command: Status" << std::endl;
-					redis.send_status(!bPause);
-					break;
-
-				default:
-					std::cout << "command: " << (int)cmd << std::endl;
-				}
-			}
+			process_commands(cmds, redis);
 
 			// process persons
+
 			for (auto & person : ps)
 			{
 				redis.person_found(person->person_desc);

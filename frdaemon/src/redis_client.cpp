@@ -71,7 +71,7 @@ bool RedisClient::get_configuration()
 	std::string key;
 	for (;;++camera_id)
 	{
-		key = "frd:" + std::to_string(camera_id);
+		key = MODULE_NAMESPACE ":" + std::to_string(camera_id);
 
 		// check if slot exists
 		
@@ -140,7 +140,7 @@ void RedisClient::send_message(RedisCommand command, std::string const & message
 {
 	auto obj = json::Object();
 
-	obj["Module"]		= (int)ModuleType::Face;
+	obj["Module"]		= (int)MODULE_TYPE;
 	obj["CameraNumber"] = std::stoi(config_camera_number);
 	obj["Command"]		= (int)command;
 	obj["Data"]			= message;
@@ -174,7 +174,7 @@ void RedisClient::listen_sub(std::function<void(RedisCommand)> on_command)
 			if (obj.hasKey("Module"))
 			{
 				auto module_id = static_cast<ModuleType>(obj["Module"].ToInt());
-				if (module_id != ModuleType::Face)
+				if (module_id != MODULE_TYPE)
 					return;
 			}
 

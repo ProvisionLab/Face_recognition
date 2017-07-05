@@ -16,6 +16,9 @@
 //#define assert(x)	if(!x) throw std::runtime_error("assert")
 #endif // USE_DAEMON
 
+#define MODULE_NAMESPACE		"frd"
+#define MODULE_TYPE				ModuleType::Face
+
 enum class RedisCommand
 {
 	Failed			= -1,
@@ -29,6 +32,7 @@ enum class RedisCommand
 enum class ModuleType
 {
 	Face = 0,
+	Cards = 0,
 };
 
 class RedisClient
