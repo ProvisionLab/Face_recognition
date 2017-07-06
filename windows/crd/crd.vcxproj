@@ -19,11 +19,11 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{943EE636-0C75-40C9-86B3-DB3B25DB8D5A}</ProjectGuid>
+    <ProjectGuid>{25B55CFE-8DF1-4055-A14D-1478F9F4BC95}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>frd</RootNamespace>
+    <RootNamespace>сrd</RootNamespace>
     <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
-    <ProjectName>frd</ProjectName>
+    <ProjectName>сrd</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -149,37 +149,19 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ProjectReference Include="curl\projects\Windows\VC14\lib\libcurl.vcxproj">
-      <Project>{da6f56b4-06a4-441d-ad70-ac5a7d51fadb}</Project>
-    </ProjectReference>
+    <ClCompile Include="..\..\crdaemon\src\crd.cpp" />
+    <ClCompile Include="..\..\crdaemon\src\frame.cpp" />
+    <ClCompile Include="..\..\crdaemon\src\redis-cplusplus-client\anet_win32.c" />
+    <ClCompile Include="..\..\crdaemon\src\redis_client.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\frdaemon\src\frame_features.cpp" />
-    <ClCompile Include="..\frdaemon\src\frd.cpp" />
-    <ClCompile Include="..\frdaemon\src\ftp_client.cpp" />
-    <ClCompile Include="..\frdaemon\src\mssql_client.cpp" />
-    <ClCompile Include="..\frdaemon\src\odbcxx\odbcxx.cpp" />
-    <ClCompile Include="..\frdaemon\src\person.cpp" />
-    <ClCompile Include="..\frdaemon\src\redis-cplusplus-client\anet_win32.c" />
-    <ClCompile Include="..\frdaemon\src\redis_client.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="..\frdaemon\src\frame_features.hpp" />
-    <ClInclude Include="..\frdaemon\src\ftp_client.hpp" />
-    <ClInclude Include="..\frdaemon\src\log.h" />
-    <ClInclude Include="..\frdaemon\src\mssql_client.hpp" />
-    <ClInclude Include="..\frdaemon\src\odbcxx\odbcxx.hpp" />
-    <ClInclude Include="..\frdaemon\src\person.hpp" />
-    <ClInclude Include="..\frdaemon\src\redis-cplusplus-client\anet_win32.h" />
-    <ClInclude Include="..\frdaemon\src\redis-cplusplus-client\fmacros.h" />
-    <ClInclude Include="..\frdaemon\src\redis-cplusplus-client\redisclient.h" />
-    <ClInclude Include="..\frdaemon\src\redis_client.hpp" />
-    <ClInclude Include="..\frdaemon\src\SimpleJSON\json.hpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="packages.config">
-      <SubType>Designer</SubType>
-    </None>
+    <ClInclude Include="..\..\crdaemon\src\frame.hpp" />
+    <ClInclude Include="..\..\crdaemon\src\log.h" />
+    <ClInclude Include="..\..\crdaemon\src\redis-cplusplus-client\anet_win32.h" />
+    <ClInclude Include="..\..\crdaemon\src\redis-cplusplus-client\fmacros.h" />
+    <ClInclude Include="..\..\crdaemon\src\redis-cplusplus-client\redisclient.h" />
+    <ClInclude Include="..\..\crdaemon\src\redis_client.hpp" />
+    <ClInclude Include="..\..\crdaemon\src\SimpleJSON\json.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
