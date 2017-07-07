@@ -16,8 +16,8 @@
 //#define assert(x)	if(!x) throw std::runtime_error("assert")
 #endif // USE_DAEMON
 
-#define MODULE_NAMESPACE		"frd"
-#define MODULE_TYPE				ModuleType::Face
+#define MODULE_NAMESPACE		"crd"
+#define MODULE_TYPE				ModuleType::Cards
 
 enum class RedisCommand
 {
@@ -32,7 +32,7 @@ enum class RedisCommand
 enum class ModuleType
 {
 	Face = 0,
-	Cards = 0,
+	Cards = 1,
 };
 
 class RedisClient
@@ -99,13 +99,9 @@ public:
 	int relock_period	= 5;
 
 	std::string		config_key;
-	std::string		config_ftp_url;
 	std::string		config_camera_url;
 	std::string		config_camera_number;
 
 	std::string		config_report_channel;
 	std::string		config_listen_channel = "DaemonSystem";
-
-	std::string		config_db_host;
-	std::string		config_db_name;
 };

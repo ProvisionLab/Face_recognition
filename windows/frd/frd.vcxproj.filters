@@ -1,14 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="Header Files">
-      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
-      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
-    </Filter>
-    <Filter Include="Resource Files">
-      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
-      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
-    </Filter>
     <Filter Include="src">
       <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
       <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
@@ -24,67 +16,64 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\frdaemon\src\frame_features.cpp">
+    <ClCompile Include="..\..\frdaemon\src\frame_features.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\frdaemon\src\frd.cpp">
+    <ClCompile Include="..\..\frdaemon\src\frd.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\frdaemon\src\ftp_client.cpp">
+    <ClCompile Include="..\..\frdaemon\src\ftp_client.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\frdaemon\src\person.cpp">
+    <ClCompile Include="..\..\frdaemon\src\person.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\frdaemon\src\redis_client.cpp">
+    <ClCompile Include="..\..\frdaemon\src\redis_client.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\frdaemon\src\redis-cplusplus-client\anet_win32.c">
+    <ClCompile Include="..\..\frdaemon\src\redis-cplusplus-client\anet_win32.c">
       <Filter>src\redis-cplusplus-client</Filter>
     </ClCompile>
-    <ClCompile Include="..\frdaemon\src\mssql_client.cpp">
+    <ClCompile Include="..\..\frdaemon\src\mssql_client.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\frdaemon\src\odbcxx\odbcxx.cpp">
+    <ClCompile Include="..\..\frdaemon\src\odbcxx\odbcxx.cpp">
       <Filter>src\odbcxx</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\frdaemon\src\frame_features.hpp">
+    <ClInclude Include="..\..\frdaemon\src\frame_features.hpp">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\frdaemon\src\ftp_client.hpp">
+    <ClInclude Include="..\..\frdaemon\src\ftp_client.hpp">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\frdaemon\src\log.h">
+    <ClInclude Include="..\..\frdaemon\src\log.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\frdaemon\src\person.hpp">
+    <ClInclude Include="..\..\frdaemon\src\person.hpp">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\frdaemon\src\redis_client.hpp">
+    <ClInclude Include="..\..\frdaemon\src\redis_client.hpp">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\frdaemon\src\redis-cplusplus-client\anet_win32.h">
+    <ClInclude Include="..\..\frdaemon\src\redis-cplusplus-client\anet_win32.h">
       <Filter>src\redis-cplusplus-client</Filter>
     </ClInclude>
-    <ClInclude Include="..\frdaemon\src\redis-cplusplus-client\fmacros.h">
+    <ClInclude Include="..\..\frdaemon\src\redis-cplusplus-client\fmacros.h">
       <Filter>src\redis-cplusplus-client</Filter>
     </ClInclude>
-    <ClInclude Include="..\frdaemon\src\redis-cplusplus-client\redisclient.h">
+    <ClInclude Include="..\..\frdaemon\src\redis-cplusplus-client\redisclient.h">
       <Filter>src\redis-cplusplus-client</Filter>
     </ClInclude>
-    <ClInclude Include="..\frdaemon\src\mssql_client.hpp">
+    <ClInclude Include="..\..\frdaemon\src\mssql_client.hpp">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\frdaemon\src\odbcxx\odbcxx.hpp">
+    <ClInclude Include="..\..\frdaemon\src\odbcxx\odbcxx.hpp">
       <Filter>src\odbcxx</Filter>
     </ClInclude>
-    <ClInclude Include="..\frdaemon\src\SimpleJSON\json.hpp">
+    <ClInclude Include="..\..\frdaemon\src\SimpleJSON\json.hpp">
       <Filter>src\SimpleJSON</Filter>
     </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="packages.config" />
   </ItemGroup>
 </Project>

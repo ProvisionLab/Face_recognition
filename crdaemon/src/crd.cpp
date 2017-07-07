@@ -1,31 +1,16 @@
+
 #include "redis_client.hpp"
-#include "person.hpp"
+#include "frame.hpp"
+#include <opencv2/opencv.hpp>
 
 #include <thread>
 #include <mutex>
 #include <condition_variable>
 #include <atomic>
 #include <csignal>
-#include "frame_features.hpp"
-
 #include <queue>
 
 #include "log.h"
-
-#include "recognition/caffe_binding.h"
-caffe::CaffeBinding* kCaffeBinding = new caffe::CaffeBinding();
-
-
-
-#define STORE_RECOGNIZED_TO_LOGS 0
-
-#ifdef _WIN32
-static const std::string config_db_username = "casino_user";
-static const std::string config_db_password = "casino";
-#else
-static const std::string config_db_username = "sa";
-static const std::string config_db_password = "Admin123!";
-#endif
 
 std::atomic<bool>	sig_term(false);
 std::atomic<bool>	sig_hup(false);
@@ -71,26 +56,7 @@ void process_commands(std::queue<RedisCommand> & commands, RedisClient & redis)
 
 }
 
-std::list<PersonSet::PersonPtr> filter_found_persons(std::vector<PersonSet::PersonPtr> persons)
-{
-	std::list<PersonSet::PersonPtr> filtered;
-
-	auto time = std::chrono::system_clock::now();
-
-	for (auto & person : persons)
-	{
-		if ((time - person->last_recognize_time) > std::chrono::seconds(config_person_recognition_period))
-		{
-			person->last_recognize_time = time;
-
-			filtered.push_back(person);
-		}
-	}
-
-	return filtered;
-}
-
-void recognize(PersonSet & persons, RedisClient & redis)
+void recognize(RedisClient & redis)
 {
 	std::mutex mx_found;
 	std::condition_variable		cv_found;
@@ -124,71 +90,13 @@ void recognize(PersonSet & persons, RedisClient & redis)
 
 	try
 	{
-<<<<<<< HEAD
-		// open camera
-		cv::VideoCapture camera(redis.config_camera_url);
-		//cv::VideoCapture camera(0);
-		std::unique_lock<std::mutex> l(mx_found);
-
-=======
->>>>>>> master
 		while (!sig_term && !sig_hup)
 		{
 			if (g_bPause)
 			{
 				while (g_bPause && !sig_term && !sig_hup)
 				{
-<<<<<<< HEAD
-				case RedisCommand::ConfigUpdate:
-					std::cout << "command: ConfigUpdate" << std::endl;
-					sig_hup = true;
-					break;
-
-				case RedisCommand::Start:
-					std::cout << "command: Start" << std::endl;
-					bPause = false;
-					break;
-
-				case RedisCommand::Stop:
-					std::cout << "command: Stop" << std::endl;
-					bPause = true;
-					break;
-
-				case RedisCommand::Status:
-					std::cout << "command: Status" << std::endl;
-					redis.send_status(!bPause);
-					break;
-
-				default:
-					std::cout << "command: " << (int)cmd << std::endl;
-				}
-			}
-
-			if (bPause)
-			{
-				std::this_thread::sleep_for(std::chrono::seconds(2));
-				redis.keep_lock();
-			}
-			else if (camera.isOpened())
-			{
-				// get camera frame
-
-				//cv::Mat frame = cv::imread("/home/cnn2/artem/photo_2017-07-04_20-32-03.jpg", CV_LOAD_IMAGE_COLOR);
-				cv::Mat frame;				
-				camera >> frame;
-
-				if (!frame.empty())
-				{
-					// recognize frame using persons
-
-					auto ps = persons.recognize(frame);
-
-					auto time = std::chrono::system_clock::now();
-
-					for (auto & person : ps)
-=======
 					std::queue<RedisCommand> cmds;
->>>>>>> master
 					{
 						std::unique_lock<std::mutex> l(mx_found);
 						cmds.swap(incoming_commands);
@@ -199,19 +107,11 @@ void recognize(PersonSet & persons, RedisClient & redis)
 					std::this_thread::sleep_for(std::chrono::seconds(1));
 					redis.keep_lock();
 				}
-<<<<<<< HEAD
-				else
-				{
-					// open camera
-					//cv::VideoCapture camera(redis.config_camera_url);
-					cv::VideoCapture camera(0);
-=======
 			}
 			else 
 			{
 				// open camera
 				cv::VideoCapture camera(redis.config_camera_url);
->>>>>>> master
 
 				while (!g_bPause && !sig_term && !sig_hup && camera.isOpened())
 				{
@@ -232,12 +132,12 @@ void recognize(PersonSet & persons, RedisClient & redis)
 					{
 						// recognize frame using persons
 
-						auto found_persons = filter_found_persons(persons.recognize(frame));
+						auto found = recognize_on_frame(frame);
 
-						for (auto & person : found_persons)
+						for (auto & v : found)
 						{
-							redis.report_recognized(person->person_desc);
-							std::cout << person->person_desc << std::endl;
+							redis.report_recognized(v);
+							std::cout << v << std::endl;
 						}
 					}
 					else
@@ -286,32 +186,12 @@ void run(std::string const & redis_host, std::string const & redis_port)
 		LOG(LOG_INFO, "slot id   : " << redis.config_key);
 		LOG(LOG_DEBUG, "camera url: " << redis.config_camera_url);
 		LOG(LOG_DEBUG, "camera num: " << redis.config_camera_number);
-		LOG(LOG_DEBUG, "ftp url   : " << redis.config_ftp_url);
 		LOG(LOG_DEBUG, "report channel : " << redis.config_report_channel);
 		LOG(LOG_DEBUG, "listen channel : " << redis.config_listen_channel);
-		LOG(LOG_DEBUG, "db_host   : " << redis.config_db_host);
-		LOG(LOG_DEBUG, "db_name   : " << redis.config_db_name);
 
-		LOG(LOG_INFO, "loading of persons samples...");
+		LOG(LOG_INFO, "start recognition...");
 
-		PersonSet persons;
-
-		persons.load_from_sql(redis, config_db_username, config_db_password);
-	
-		LOG(LOG_INFO, persons.persons.size() << " persons loaded");
-
-		if (!persons.persons.empty())
-		{
-			LOG(LOG_INFO, "start recognition...");
-
-			recognize(persons, redis);
-		}
-		else
-		{
-			LOG(LOG_INFO, "no person for recognition");
-			redis.send_error_status("no person for recognition");
-		}
-
+		recognize(redis);
 	}
 	catch (std::exception const & e)
 	{
@@ -330,17 +210,6 @@ int main(int argc, char** argv)
 		return 0;
 	}
 
-<<<<<<< HEAD
-#ifdef USE_DAEMON
-
-	daemonize();
-
-#endif
-
-	FrameFeatures::initialize();
-
-=======
->>>>>>> master
 	std::string redis_host(argv[1]);
 	std::string redis_port = std::to_string(RedisClient::REDIS_PORT);
 
