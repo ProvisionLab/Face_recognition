@@ -144,7 +144,6 @@ std::shared_ptr<PersonFeatures>	PersonFeaturesSet::find_nearest(std::vector<floa
 		}
 	};
 	std::cout<<"Min dist="<<min_dist<<std::endl;
-	
 	std::cout<<"FULL REC TIME time="<<(float) std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - p).count() / 1000 <<"ms"<<std::endl;
 	return min_person;
 }

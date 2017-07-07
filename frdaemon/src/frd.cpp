@@ -75,7 +75,7 @@ void recognize(PersonSet & persons, RedisClient & redis)
 	{
 		// open camera
 		cv::VideoCapture camera(redis.config_camera_url);
-
+		//cv::VideoCapture camera(0);
 		std::unique_lock<std::mutex> l(mx_found);
 
 		while (!sig_term && !sig_hup)
@@ -126,7 +126,8 @@ void recognize(PersonSet & persons, RedisClient & redis)
 			{
 				// get camera frame
 
-				cv::Mat frame;
+				//cv::Mat frame = cv::imread("/home/cnn2/artem/photo_2017-07-04_20-32-03.jpg", CV_LOAD_IMAGE_COLOR);
+				cv::Mat frame;				
 				camera >> frame;
 
 				if (!frame.empty())
