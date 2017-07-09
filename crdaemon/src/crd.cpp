@@ -111,7 +111,8 @@ void recognize(RedisClient & redis)
 			else 
 			{
 				// open camera
-				cv::VideoCapture camera(redis.config_camera_url);
+				//cv::VideoCapture camera(redis.config_camera_url);
+				cv::VideoCapture camera("/home/greeser/Work/Face_recognition/crdaemon/build_linux/ZpbkH035.mp4");
 
 				while (!g_bPause && !sig_term && !sig_hup && camera.isOpened())
 				{
@@ -127,6 +128,8 @@ void recognize(RedisClient & redis)
 
 					cv::Mat frame;
 					camera >> frame;
+					cv::imshow("dbg", frame);
+					cv::waitKey(10);
 
 					if (!frame.empty())
 					{
