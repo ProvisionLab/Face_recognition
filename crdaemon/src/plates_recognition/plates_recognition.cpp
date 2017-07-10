@@ -4,9 +4,39 @@ int morph_size_r = 1;
 int morph_size_l = 4;
 int sobel_kernel = 3; // 1 - 3 - 5 - 7
 cv::Size gauss_kernel = cv::Size(5,5);
+std::unique_ptr<alpr::Alpr> openalpr;
 
 // Initialize the library using United States style license plates.
 // You can use other countries/regions as well (for example: "eu", "au", or "kr")
+void init_alpr()
+{
+    if (!openalpr)
+    {
+        openalpr.reset(new alpr::Alpr("eu","/home/greeser/Work/toolkits/openalpr-2.3.0/config/openalpr.conf.defaults", "/home/greeser/Work/toolkits/openalpr-2.3.0/runtime_data"));
+
+        openalpr->setTopN(20);
+
+        std::cerr << "openalpr initialized" << std::endl;
+    }
+
+#ifdef _DEBUG
+//  alpr::AlprResults results = openalpr->recognize("./20170705_122304.jpg");
+    alpr::AlprResults results = openalpr->recognize("./image10.png");
+
+    std::cout << "alpr: " << results.plates.size() << " results" << std::endl;
+
+    for (auto & plate : results.plates)
+    {
+        std::cout << "plate: " << plate.topNPlates.size() << " results" << std::endl;
+
+        for (auto & candidate : plate.topNPlates)
+        {
+            std::cout << "    - " << candidate.characters << "\t confidence: " << candidate.overall_confidence;
+            std::cout << "\t pattern_match: " << candidate.matches_template << std::endl;
+        }
+    }
+#endif
+}
 
 std::string exec(const char* cmd) {
   //std::cout<<cmd<<std::endl;
@@ -57,6 +87,25 @@ void printPlate(cv::Mat& plate)
     }
 }
 
+void printPlateAlpr(cv::Mat& plate)
+{
+    std::string filename="/home/greeser/plate.png";
+    cv::imwrite(filename, plate);
+    alpr::AlprResults results = openalpr->recognize("/home/greeser/plate.png");
+
+    std::cout << "alpr: " << results.plates.size() << " results" << std::endl;
+
+    for (auto & plate : results.plates)
+    {
+        std::cout << "plate: " << plate.topNPlates.size() << " results" << std::endl;
+
+        for (auto & candidate : plate.topNPlates)
+        {
+            std::cout << "    - " << candidate.characters << "\t confidence: " << candidate.overall_confidence;
+            std::cout << "\t pattern_match: " << candidate.matches_template << std::endl;
+        }
+    }
+}
 
 void showPlate(cv::RotatedRect& mr, cv::Mat& image)
 {
@@ -121,7 +170,7 @@ void cropPlate(cv::RotatedRect& mr, cv::Mat& image)
     if(tess(target)>0)
     {
         cv::Mat plate=image(mr.boundingRect());
-        printPlate(plate);
+        printPlateAlpr(plate);
        // cv::imshow("perspPlate", target);
        // cv::waitKey(100);
     }

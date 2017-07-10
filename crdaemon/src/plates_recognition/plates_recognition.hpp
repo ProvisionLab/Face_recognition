@@ -21,6 +21,8 @@ using namespace std;
 // Initialize the library using United States style license plates.
 // You can use other countries/regions as well (for example: "eu", "au", or "kr")
 
+void init_alpr();
+
 std::string exec(const char* cmd);
 
 void printPlate(cv::Mat& plate);

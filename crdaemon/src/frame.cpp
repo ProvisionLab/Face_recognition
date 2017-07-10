@@ -1,5 +1,5 @@
 #include "frame.hpp"
-
+#include "plates_recognition/plates_recognition.hpp"
 #include <random>
 #include <memory>
 
@@ -44,37 +44,37 @@ namespace alpr
 
 #endif
 
-std::unique_ptr<alpr::Alpr>	openalpr;
+extern std::unique_ptr<alpr::Alpr>	openalpr;
 
-void init_alpr()
-{
-	if (!openalpr)
-	{
-		openalpr.reset(new alpr::Alpr("eu", "./openalpr/runtime_data/config/eu.conf", "./openalpr/runtime_data"));
+// void init_alpr()
+// {
+// 	if (!openalpr)
+// 	{
+// 		openalpr.reset(new alpr::Alpr("eu", "./openalpr/runtime_data/config/eu.conf", "./openalpr/runtime_data"));
 
-		openalpr->setTopN(20);
+// 		openalpr->setTopN(20);
 
-		std::cerr << "openalpr initialized" << std::endl;
-	}
+// 		std::cerr << "openalpr initialized" << std::endl;
+// 	}
 
-#ifdef _DEBUG
-//	alpr::AlprResults results = openalpr->recognize("./20170705_122304.jpg");
-	alpr::AlprResults results = openalpr->recognize("./image10.png");
+// #ifdef _DEBUG
+// //	alpr::AlprResults results = openalpr->recognize("./20170705_122304.jpg");
+// 	alpr::AlprResults results = openalpr->recognize("./image10.png");
 
-	std::cout << "alpr: " << results.plates.size() << " results" << std::endl;
+// 	std::cout << "alpr: " << results.plates.size() << " results" << std::endl;
 
-	for (auto & plate : results.plates)
-	{
-		std::cout << "plate: " << plate.topNPlates.size() << " results" << std::endl;
+// 	for (auto & plate : results.plates)
+// 	{
+// 		std::cout << "plate: " << plate.topNPlates.size() << " results" << std::endl;
 
-		for (auto & candidate : plate.topNPlates)
-		{
-			std::cout << "    - " << candidate.characters << "\t confidence: " << candidate.overall_confidence;
-			std::cout << "\t pattern_match: " << candidate.matches_template << std::endl;
-		}
-	}
-#endif
-}
+// 		for (auto & candidate : plate.topNPlates)
+// 		{
+// 			std::cout << "    - " << candidate.characters << "\t confidence: " << candidate.overall_confidence;
+// 			std::cout << "\t pattern_match: " << candidate.matches_template << std::endl;
+// 		}
+// 	}
+// #endif
+// }
 
 std::vector<std::string> recognize_on_frame(cv::Mat const & frame)
 {
@@ -83,6 +83,16 @@ std::vector<std::string> recognize_on_frame(cv::Mat const & frame)
 		init_alpr();
 	}
 
+	cv::Mat image = frame.clone();
+	try
+	{
+
+	std::vector<std::string> results = plate_recognition(image);
+	}
+	catch(...)
+	{
+		return {};
+	}
 	static std::mt19937 g_rng(std::random_device{}());
 
 	if (std::uniform_real_distribution<float>(0, 100)(g_rng) < 0.2f)
