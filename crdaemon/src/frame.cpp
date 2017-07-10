@@ -46,6 +46,30 @@ namespace alpr
 
 std::unique_ptr<alpr::Alpr>	openalpr;
 
+
+void test_recognize()
+{
+	std::cout << "try alpr recognize" << std::endl;
+
+	//alpr::AlprResults results = openalpr->recognize("./20170705_122304.jpg");
+	alpr::AlprResults results = openalpr->recognize("./image10.png");
+
+	std::cout << "alpr: " << results.plates.size() << " results" << std::endl;
+
+	std::vector<std::string> found;
+
+	for (auto & plate : results.plates)
+	{
+		std::cout << "plate: " << plate.topNPlates.size() << " results" << std::endl;
+
+		for (auto & candidate : plate.topNPlates)
+		{
+			std::cout << "    - " << candidate.characters << "\t confidence: " << candidate.overall_confidence;
+			std::cout << "\t pattern_match: " << candidate.matches_template << std::endl;
+		}
+	}
+}
+
 void init_alpr()
 {
 	if (!openalpr)
@@ -62,6 +86,10 @@ void init_alpr()
 			openalpr.reset();
 			throw std::runtime_error("Error loading OpenALPR");
 		}
+
+#ifdef _DEBUG
+		test_recognize();
+#endif
 	}
 }
 
@@ -72,31 +100,23 @@ std::vector<std::string> recognize_on_frame(cv::Mat const & frame)
 		init_alpr();
 	}
 
-#ifdef _DEBUG
-		alpr::AlprResults results = openalpr->recognize("./20170705_122304.jpg");
-	//alpr::AlprResults results = openalpr->recognize("./image10.png");
-
-	//std::cout << "alpr: " << results.plates.size() << " results" << std::endl;
+	//alpr::AlprResults results = openalpr->recognize("./20170705_122304.jpg");
+	alpr::AlprResults results = openalpr->recognize("./image10.png");
 
 	std::vector<std::string> found;
 
 	for (auto & plate : results.plates)
 	{
-		//std::cout << "plate: " << plate.topNPlates.size() << " results" << std::endl;
-
 		for (auto & candidate : plate.topNPlates)
 		{
-			//std::cout << "    - " << candidate.characters << "\t confidence: " << candidate.overall_confidence;
-			//std::cout << "\t pattern_match: " << candidate.matches_template << std::endl;
-
 			found.push_back(candidate.characters);
 			break;
 		}
 	}
 
 	return found;
-#endif
 
+#if 0
 	static std::mt19937 g_rng(std::random_device{}());
 
 	if (std::uniform_real_distribution<float>(0, 100)(g_rng) < 0.2f)
@@ -105,4 +125,5 @@ std::vector<std::string> recognize_on_frame(cv::Mat const & frame)
 	}
 
 	return {};
+#endif
 }
