@@ -44,6 +44,9 @@
     <None Include="build_linux\.gdbinit">
       <Filter>build_linux</Filter>
     </None>
+    <None Include="build_linux\openalpr.conf">
+      <Filter>build_linux</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\redis_client.cpp">

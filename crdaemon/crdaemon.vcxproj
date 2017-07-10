@@ -40,6 +40,7 @@
     <None Include="build_linux\Makefile">
       <FileType>Document</FileType>
     </None>
+    <None Include="build_linux\openalpr.conf" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\frame.cpp" />

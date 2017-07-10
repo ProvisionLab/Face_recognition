@@ -50,7 +50,8 @@ void init_alpr()
 {
 	if (!openalpr)
 	{
-		openalpr.reset(new alpr::Alpr("eu", "./openalpr/runtime_data/config/eu.conf", "./openalpr/runtime_data"));
+//		openalpr.reset(new alpr::Alpr("eu", "./openalpr/runtime_data/config/eu.conf", "./openalpr/runtime_data"));
+		openalpr.reset(new alpr::Alpr("eu", "./openalpr.conf"));
 
 		if (openalpr->isLoaded())
 		{
