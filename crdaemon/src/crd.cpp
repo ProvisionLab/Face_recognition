@@ -53,7 +53,29 @@ void process_commands(std::queue<RedisCommand> & commands, RedisClient & redis)
 			std::cout << "command: " << (int)cmd << std::endl;
 		}
 	}
+}
 
+std::vector<std::string> filter_results(
+	std::vector<std::string> const & results, 
+	std::map<std::string, std::chrono::system_clock::time_point> & plates)
+{
+	std::vector<std::string> filtered;
+
+	auto now = std::chrono::system_clock::now();
+
+	static const auto delay = std::chrono::seconds(1);
+
+	for (auto & res : results)
+	{
+		auto & last_time = plates[res];
+		if ((now - last_time) > delay)
+		{
+			last_time = now;
+			filtered.push_back(res);
+		}
+	}
+
+	return filtered;
 }
 
 void recognize(RedisClient & redis)
@@ -92,6 +114,8 @@ void recognize(RedisClient & redis)
 
 	try
 	{
+		std::map<std::string, std::chrono::system_clock::time_point>	plates;
+
 		while (!sig_term && !sig_hup)
 		{
 			if (g_bPause)
@@ -134,7 +158,7 @@ void recognize(RedisClient & redis)
 					{
 						// recognize frame using persons
 
-						auto found = recognize_on_frame(frame);
+						auto found = filter_results(recognize_on_frame(frame), plates);
 
 						for (auto & v : found)
 						{
