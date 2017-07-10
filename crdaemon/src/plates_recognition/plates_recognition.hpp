@@ -26,10 +26,10 @@ void init_alpr();
 std::string exec(const char* cmd);
 
 void printPlate(cv::Mat& plate);
-
+std::string printPlateAlpr(cv::Mat& plate);
 
 void showPlate(cv::RotatedRect& mr, cv::Mat& image);
-void cropPlate(cv::RotatedRect& mr, cv::Mat& image);
+std::string cropPlate(cv::RotatedRect& mr, cv::Mat& image);
 
 void processImage(cv::Mat& image, cv::Mat& processed_image);
 

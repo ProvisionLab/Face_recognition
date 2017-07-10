@@ -25,15 +25,14 @@ endif
 
 #CPPFLAGS 	+= -DUSE_DAEMON
 
-INCLUDEPATH += /usr/local/include/opencv
-INCLUDEPATH += /home/greeser/Work/toolkits/openalpr-2.3.0/src/openalpr
+INCLUDES += -I/home/greeser/Work/toolkits/opencv/build/install/include
+INCLUDES += -I/home/greeser/Work/toolkits/openalpr-2.3.0/src/build/install/include
 
 LIBS 		+= -lpthread
 LIBS 		+= -lboost_system -lboost_filesystem
-#LIBS 		+= -lopencv_core -lopencv_imgproc -lopencv_video -lopencv_highgui
-LIBS		+= -L/home/greeser/Work/toolkits/openalpr-2.3.0/src/build/openalpr -lopenalpr
+LIBS		+= -L/home/greeser/Work/toolkits/openalpr-2.3.0/src/build/install/lib -lopenalpr
 
-LIBS 		+= -L/usr/local/lib \
+LIBS 		+= -L/home/greeser/Work/toolkits/opencv/build/install/lib \
 				-lopencv_core \
 				-lopencv_imgproc \
 				-lopencv_highgui \

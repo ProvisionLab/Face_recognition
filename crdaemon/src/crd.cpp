@@ -114,7 +114,7 @@ void recognize(RedisClient & redis)
 			{
 				// open camera
 				//cv::VideoCapture camera(redis.config_camera_url);
-				cv::VideoCapture camera("/home/greeser/Work/Face_recognition/crdaemon/build_linux/ZpbkH035.mp4");
+				cv::VideoCapture camera("/home/greeser/Desktop/FXs6i8qE.mp4");
 
 				while (!g_bPause && !sig_term && !sig_hup && camera.isOpened())
 				{

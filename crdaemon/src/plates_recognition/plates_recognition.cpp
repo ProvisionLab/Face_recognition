@@ -87,24 +87,31 @@ void printPlate(cv::Mat& plate)
     }
 }
 
-void printPlateAlpr(cv::Mat& plate)
+std::string printPlateAlpr(cv::Mat& plate)
 {
     std::string filename="/home/greeser/plate.png";
     cv::imwrite(filename, plate);
     alpr::AlprResults results = openalpr->recognize("/home/greeser/plate.png");
 
-    std::cout << "alpr: " << results.plates.size() << " results" << std::endl;
+   // std::cout << "alpr: " << results.plates.size() << " results" << std::endl;
 
     for (auto & plate : results.plates)
     {
-        std::cout << "plate: " << plate.topNPlates.size() << " results" << std::endl;
+       // std::cout << "plate: " << plate.topNPlates.size() << " results" << std::endl;
 
         for (auto & candidate : plate.topNPlates)
         {
-            std::cout << "    - " << candidate.characters << "\t confidence: " << candidate.overall_confidence;
-            std::cout << "\t pattern_match: " << candidate.matches_template << std::endl;
+            if ((float)candidate.overall_confidence > 88.0)
+            {
+                std::string res = candidate.characters ;
+               // std::cout << "    - " << res << "\t confidence: " << candidate.overall_confidence <<std::endl;
+                
+                return res;
+            }
         }
     }
+
+    return "";
 }
 
 void showPlate(cv::RotatedRect& mr, cv::Mat& image)
@@ -124,7 +131,7 @@ void showPlate(cv::RotatedRect& mr, cv::Mat& image)
    // cv::waitKey(1);
 }
 
-void cropPlate(cv::RotatedRect& mr, cv::Mat& image)
+std::string cropPlate(cv::RotatedRect& mr, cv::Mat& image)
 {
 
     cv::Mat target(mr.size.height, mr.size.width, CV_8UC1);
@@ -170,13 +177,14 @@ void cropPlate(cv::RotatedRect& mr, cv::Mat& image)
     if(tess(target)>0)
     {
         cv::Mat plate=image(mr.boundingRect());
-        printPlateAlpr(plate);
+        std::string res = printPlateAlpr(plate);
+        return res;
        // cv::imshow("perspPlate", target);
        // cv::waitKey(100);
     }
     else
     {
-        return;
+        return "";
     }
 
 
@@ -237,7 +245,7 @@ std::vector<std::string> plate_recognition(cv::Mat& image)
     std::vector<std::string> results;
     cv::Mat otsu_image;
     processImage(image, otsu_image);
-    std::cout<<" IMAGE PROCESSED"<<std::endl;
+    
     std::vector<std::vector<cv::Point> > contours;
     cv::findContours(otsu_image, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE);
 
@@ -276,11 +284,12 @@ std::vector<std::string> plate_recognition(cv::Mat& image)
             cv::Point2f ps[4];
             mr.points(ps);
 
-            cropPlate(mr, image);
-
-            results.push_back("lol");
-
-            std::cout<<" PLATE CROPPED"<<std::endl;
+            std::string plate_char=cropPlate(mr, image);
+            if(!plate_char.empty())
+            {
+                //std::cout<<"Push result"<<plate_char<<std::endl;
+                results.push_back(plate_char);
+            }
 
         }
 

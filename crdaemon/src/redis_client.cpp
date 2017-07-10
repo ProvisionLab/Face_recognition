@@ -144,9 +144,9 @@ void RedisClient::send_message(RedisCommand command, std::string const & message
 
 	std::string json = obj.dump();
 
-#ifdef _DEBUG
+//#ifdef _DEBUG
 	std::cout << json << std::endl;
-#endif
+//#endif
 
 	redis_.publish(config_report_channel, json);
 }

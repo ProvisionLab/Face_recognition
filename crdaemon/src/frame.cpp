@@ -84,10 +84,11 @@ std::vector<std::string> recognize_on_frame(cv::Mat const & frame)
 	}
 
 	cv::Mat image = frame.clone();
+	std::vector<std::string> results;
 	try
 	{
 
-	std::vector<std::string> results = plate_recognition(image);
+	 results= plate_recognition(image);
 	}
 	catch(...)
 	{
@@ -100,5 +101,5 @@ std::vector<std::string> recognize_on_frame(cv::Mat const & frame)
 		return { std::to_string(std::uniform_int_distribution<int>(100000, 999999)(g_rng)) };
 	}
 
-	return {};
+	return results;
 }
