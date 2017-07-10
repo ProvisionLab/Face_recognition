@@ -58,6 +58,8 @@ void process_commands(std::queue<RedisCommand> & commands, RedisClient & redis)
 
 void recognize(RedisClient & redis)
 {
+	init_alpr();
+
 	std::mutex mx_found;
 	std::condition_variable		cv_found;
 
