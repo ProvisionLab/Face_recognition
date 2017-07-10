@@ -137,8 +137,8 @@ void recognize(RedisClient & redis)
 			else 
 			{
 				// open camera
-				cv::VideoCapture camera(redis.config_camera_url);
-
+				//cv::VideoCapture camera(redis.config_camera_url);
+				cv::VideoCapture camera("/home/greeser/Work/plates_recognition/SPP/build-spp-Desktop_Qt_5_7_0_GCC_64bit-Release/ZpbkH035.mp4");	
 				while (!g_bPause && !sig_term && !sig_hup && camera.isOpened())
 				{
 					std::queue<RedisCommand> cmds;
@@ -153,6 +153,8 @@ void recognize(RedisClient & redis)
 
 					cv::Mat frame;
 					camera >> frame;
+					cv::imshow("dbg", frame);
+					cv::waitKey(1);
 
 					if (!frame.empty())
 					{

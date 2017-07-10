@@ -20,10 +20,28 @@ endif
 
 #CPPFLAGS 	+= -DUSE_DAEMON
 
+
+INCLUDES += -I/home/greeser/Work/toolkits/opencv/build/install/include
+INCLUDES += -I/home/greeser/Work/toolkits/openalpr-2.3.0/src/build/install/include
+
 LIBS 		+= -lpthread
 LIBS 		+= -lboost_system -lboost_filesystem
-LIBS 		+= -lopencv_core -lopencv_imgproc -lopencv_video -lopencv_highgui
-LIBS		+= -lopenalpr
+LIBS		+= -L/home/greeser/Work/toolkits/openalpr-2.3.0/src/build/install/lib -lopenalpr
+
+LIBS 		+= -L/home/greeser/Work/toolkits/opencv/build/install/lib \
+				-lopencv_core \
+				-lopencv_imgproc \
+				-lopencv_highgui \
+				-lopencv_ml \
+				-lopencv_video \
+				-lopencv_features2d \
+				-lopencv_calib3d \
+				-lopencv_objdetect \
+				-lopencv_flann \
+				-lopencv_ximgproc \
+				-lopencv_imgcodecs \
+				-lopencv_text \
+				-lopencv_videoio
 
 all: 	$(TARGET)
 
