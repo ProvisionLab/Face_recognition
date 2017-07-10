@@ -180,8 +180,9 @@ void recognize(RedisClient & redis)
 
 		} // while
 	}
-	catch (...)
+	catch (std::exception const & e)
 	{
+		std::cerr << e.what() << std::endl;
 	}
 
 	sig_hup = true;
@@ -278,7 +279,7 @@ int main(int argc, char** argv)
 		}
 		catch (std::exception &e)
 		{
-			LOG(LOG_ERR, "redis error: " << e.what());
+			LOG(LOG_ERR, "error: " << e.what());
 		}
 
 		// exit from run on error or sig_term or sig_hup

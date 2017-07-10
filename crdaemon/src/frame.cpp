@@ -51,7 +51,16 @@ void init_alpr()
 	if (!openalpr)
 	{
 		openalpr.reset(new alpr::Alpr("eu", "./openalpr/runtime_data/config/eu.conf", "./openalpr/runtime_data"));
-		std::cerr << "openalpr initialized" << std::endl;
+
+		if (openalpr->isLoaded())
+		{
+			std::cerr << "openalpr initialized" << std::endl;
+		}
+		else
+		{
+			openalpr.reset();
+			throw std::runtime_error("Error loading OpenALPR");
+		}
 	}
 }
 
