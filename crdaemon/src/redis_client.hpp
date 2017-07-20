@@ -17,7 +17,7 @@
 #endif // USE_DAEMON
 
 #define MODULE_NAMESPACE		"crd"
-#define MODULE_TYPE				ModuleType::Cards
+#define MODULE_TYPE				ModuleType::Cars
 
 enum class RedisCommand
 {
@@ -32,7 +32,7 @@ enum class RedisCommand
 enum class ModuleType
 {
 	Face = 0,
-	Cards = 1,
+	Cars = 1,
 };
 
 class RedisClient
@@ -55,10 +55,7 @@ public:
 	// return false if no free slots
 	bool get_configuration();
 
-	void report_recognized(std::string const & person_id)
-	{
-		send_message(RedisCommand::Recognized, person_id);
-	}
+	void report_recognized(std::string const & plate_number, std::string const & plate_image);
 
 	void send_error_status(std::string const & error_message)
 	{

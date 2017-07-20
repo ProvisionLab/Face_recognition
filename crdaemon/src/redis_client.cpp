@@ -133,6 +133,26 @@ void RedisClient::unlock_slot()
 	redis_.del(config_key + ":lock");
 }
 
+void RedisClient::report_recognized(std::string const & plate_number, std::string const & plate_image)
+{
+	auto obj = json::Object();
+
+	obj["Module"] = (int)MODULE_TYPE;
+	obj["CameraNumber"] = std::stoi(config_camera_number);
+	obj["Command"] = (int)RedisCommand::Recognized;
+
+	auto data = json::Object();
+
+	data["PlateNumber"] = plate_number;
+	data["PlateImage"] = plate_image;
+
+	obj["Data"] = data;
+
+	std::string json = obj.dump();
+
+	redis_.publish(config_report_channel, json);
+}
+
 void RedisClient::send_message(RedisCommand command, std::string const & message)
 {
 	auto obj = json::Object();
