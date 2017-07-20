@@ -207,8 +207,6 @@ void recognize(RedisClient & redis)
 
 					cv::Mat frame;
 					camera >> frame;
-					cv::imshow("dbg", frame);
-					cv::waitKey(1);
 
 					if (!frame.empty())
 					{
