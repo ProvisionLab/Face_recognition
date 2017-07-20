@@ -6,16 +6,14 @@ TARGET = crdaemond
 endif
 
 HEADERS = \
-	../src/plates_recognition/plates_recognition.hpp \
-	../src/plates_recognition/text_detection.hpp
+	../src/plates_recognition/plates_recognition.hpp 
 
 SOURCES = \
 	../src/crd.cpp \
 	../src/frame.cpp \
 	../src/redis_client.cpp \
 	../src/redis-cplusplus-client/anet.c \
-	../src/plates_recognition/plates_recognition.cpp \
-	../src/plates_recognition/text_detection.cpp
+	../src/plates_recognition/plates_recognition.cpp 
 
 CPPFLAGS 	= -std=c++11 -D_DEFAULT_SOURCE 
 

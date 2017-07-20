@@ -1,0 +1,5 @@
+{
+	"shell_cmd": "make",
+	"dir" : "/home/greeser/Work/Face_recognition/crdaemon/build_linux",
+	"path" : "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin"
+}

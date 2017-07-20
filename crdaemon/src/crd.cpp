@@ -1,6 +1,7 @@
 
 #include "redis_client.hpp"
 #include "frame.hpp"
+#include "plates_recognition/plates_recognition.hpp"
 #include <opencv2/opencv.hpp>
 
 #include <thread>
@@ -135,8 +136,6 @@ std::vector<std::pair<std::string, cv::Mat>> filter_results(
 
 void recognize(RedisClient & redis)
 {
-	init_alpr();
-
 	std::mutex mx_found;
 	std::condition_variable		cv_found;
 
@@ -192,7 +191,9 @@ void recognize(RedisClient & redis)
 			else 
 			{
 				// open camera
-				cv::VideoCapture camera(redis.config_camera_url);
+				//cv::VideoCapture camera(redis.config_camera_url);
+				cv::VideoCapture camera("ZpbkH035.mp4");
+				
 				while (!g_bPause && !sig_term && !sig_hup && camera.isOpened())
 				{
 					std::queue<RedisCommand> cmds;
@@ -322,6 +323,8 @@ int main(int argc, char** argv)
 
 #endif
 #endif
+
+	PlateRecognizer::init();
 
 	while (true)
 	{

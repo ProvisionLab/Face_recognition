@@ -9,5 +9,3 @@
 #include <opencv2/opencv.hpp>
 
 std::vector<std::pair<std::string, cv::Mat>> recognize_on_frame(cv::Mat const & frame);
-
-void init_alpr();
