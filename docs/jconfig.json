@@ -1,0 +1,31 @@
+{
+   "CameraUrl":"http://96.67.135.201/axis-cgi/mjpg/video.cgi?x.mjpeg",
+   "TableNumber":1,
+   "SourceType":1,
+   "Game":"baccarat",
+   "Crops":[
+      {
+         "AreaNumber":0,
+         "Left":0.37,
+         "Top":0.686,
+         "Right":0.449,
+         "Bottom":0.147
+      },
+      {
+         "AreaNumber":1,
+         "Left":0.14,
+         "Top":0.578,
+         "Right":0.674,
+         "Bottom":0.248
+      }
+   ],
+   "Buttons":[
+      {
+         "AreaNumber":1,
+         "Left":0.223,
+         "Top":0.265,
+         "Right":0.587,
+         "Bottom":0.426
+      }
+   ]
+}

@@ -1,0 +1,52 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="src">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="src\redis-cplusplus-client">
+      <UniqueIdentifier>{7a7bc008-4fed-42c1-9af5-8828166dac29}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\SimpleJSON">
+      <UniqueIdentifier>{994658b2-47e8-412d-afde-5d1da607f232}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\trdaemon\src\trd.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\trdaemon\src\redis_client.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\trdaemon\src\redis-cplusplus-client\anet_win32.c">
+      <Filter>src\redis-cplusplus-client</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\trdaemon\src\cards_table.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\trdaemon\src\log.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\trdaemon\src\redis_client.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\trdaemon\src\redis-cplusplus-client\anet_win32.h">
+      <Filter>src\redis-cplusplus-client</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\trdaemon\src\redis-cplusplus-client\fmacros.h">
+      <Filter>src\redis-cplusplus-client</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\trdaemon\src\redis-cplusplus-client\redisclient.h">
+      <Filter>src\redis-cplusplus-client</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\trdaemon\src\SimpleJSON\json.hpp">
+      <Filter>src\SimpleJSON</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\trdaemon\src\cards_table.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>
