@@ -105,11 +105,22 @@ std::string CardsTable::Results::to_json() const
 	return {};
 }
 
+CardsTable::~CardsTable()
+{
+	uninit();
+}
+
 bool CardsTable::init()
 {
 	// 2do: initialize network
 
 	return true;
+}
+
+void CardsTable::uninit()
+{
+	// 2do: release network resources
+
 }
 
 CardsTable::Results CardsTable::recognize(cv::Mat const & frame)

@@ -24,9 +24,12 @@ public:
 		std::string to_json() const;
 	};
 
+	~CardsTable();
+
 	bool set_config(std::string const & jsonConfig);
 
 	bool init();
+	void uninit();
 
 	Results recognize(cv::Mat const & frame);
 
