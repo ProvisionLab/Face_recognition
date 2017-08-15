@@ -132,7 +132,7 @@ void recognize(CardsTable & table, RedisClient & redis)
 					{
 						// recognize frame using persons
 
-						auto results = table.recognize(frame);
+						auto results = table.recognize(frame).to_json();
 
 						if (!results.empty())
 						{
@@ -193,7 +193,7 @@ void run(std::string const & redis_host, std::string const & redis_port)
 
 		CardsTable table;
 
-		if (table.set_config(redis.config_table))
+		if (table.set_config(redis.config_table) && table.init())
 		{
 			LOG(LOG_INFO, "start recognition...");
 

@@ -108,6 +108,47 @@ bool RedisClient::get_configuration()
 	//config_listen_channel	= redis_.hget(config_key, "ListenChannel");
 	config_table			= redis_.hget(config_key, "Config");
 
+#ifdef _DEBUG
+
+	if (config_table == "{}")
+	{
+		redis_.hset(config_key, "Config", 
+			"{\n"
+			"\"CameraUrl\":\"http://96.67.135.201/axis-cgi/mjpg/video.cgi?x.mjpeg\",\n"
+			"	\"TableNumber\" : 1,\n"
+			"	\"SourceType\" : 1, \n"
+			"	\"Game\" : \"baccarat\", \n"
+			"	\"Crops\" : [\n"
+			"   {\n"
+			"		\"AreaNumber\":0,\n"
+			"		\"Left\" : 0.37,\n"
+			"		\"Top\" : 0.686,\n"
+			"		\"Right\" : 0.449,\n"
+			"		\"Bottom\" : 0.147\n"
+			"	},\n"
+			"	{\n"
+			"		\"AreaNumber\":1,\n"
+			"		\"Left\" : 0.14,\n"
+			"		\"Top\" : 0.578,\n"
+			"		\"Right\" : 0.674,\n"
+			"		\"Bottom\" : 0.248\n"
+			"	}\n"
+			"	],\n"
+			"	\"Buttons\":[\n"
+			"	{\n"
+			"		\"AreaNumber\":1,\n"
+			"		\"Left\" : 0.223,\n"
+			"		\"Top\" : 0.265,\n"
+			"		\"Right\" : 0.587,\n"
+			"		\"Bottom\" : 0.426\n"
+			"	}\n"
+			"	]\n"
+		"}"
+		);
+	}
+
+#endif
+
 	return true;
 }
 
