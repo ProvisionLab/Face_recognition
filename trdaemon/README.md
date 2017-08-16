@@ -1,5 +1,4 @@
-
-#Description
+# Description
 Deamon for cards detection and recognition on game table. One deamon instance matches one table. Deamon uses:
 -OpenCV 3.2+ for working with camera steam
 -Caffe framework for card's detection and recognition
