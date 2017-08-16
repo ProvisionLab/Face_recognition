@@ -1,0 +1,37 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ImportGroup Label="PropertySheets" />
+  <PropertyGroup Label="UserMacros">
+    <CAFFE_PATH>D:\work\Card_L3\caffe-windows-master</CAFFE_PATH>
+  </PropertyGroup>
+  <PropertyGroup>
+    <IncludePath>$(CAFFE_PATH)\build_vs2015\3rdparty\include;$(CAFFE_PATH)\build_vs2015\3rdparty\src\protobuf\src;$(CAFFE_PATH)\build_vs2015\3rdparty\src\glog\src\windows;$(CAFFE_PATH)\build_vs2015\caffelib\src;$(CAFFE_PATH)\include;$(CAFFE_PATH)\src;$(CUDA_PATH)\include;$(OPENCV_DIR)\include;$(BOOST_ROOT_1_64);$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)bin;$(CAFFE_PATH)\build_vs2015\lib\vc14\x64\Release;$(CAFFE_PATH)\build_vs2015\3rdparty\lib\vc14\x64\Release;$(CAFFE_PATH)\build_vs2015\3rdparty\lib;$(OPENCV_DIR)\x64\vc14\lib;$(BOOST_ROOT_1_64)\stage64\lib;$(CUDA_PATH)\lib\x64;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <PreprocessorDefinitions>USE_OPENCV;USE_LEVELDB;USE_LMDB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link />
+    <Link>
+      <AdditionalDependencies>caffelib.lib;libprotobuf.lib;hdf5_hl.lib;hdf5.lib;zlib.lib;szip.lib;opencv_world320.lib;leveldb.lib;libglog.lib;lmdb.lib;libopenblas.dll.lib;gflags.lib;cudart.lib;cublas.lib;curand.lib;cublas_device.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <CudaCompile>
+      <CudaRuntime>Static</CudaRuntime>
+    </CudaCompile>
+    <CudaCompile>
+      <TargetMachinePlatform>64</TargetMachinePlatform>
+      <CodeGeneration>compute_30,sm_30;</CodeGeneration>
+      <FastMath>false</FastMath>
+      <AdditionalCompilerOptions>
+      </AdditionalCompilerOptions>
+      <AdditionalOptions>-Xcudafe "--diag_suppress=exception_spec_override_incompat --diag_suppress=useless_using_declaration --diag_suppress=field_without_dll_interface" -D_SCL_SECURE_NO_WARNINGS -DGFLAGS_DLL_DECL= %(AdditionalOptions)</AdditionalOptions>
+    </CudaCompile>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <BuildMacro Include="CAFFE_PATH">
+      <Value>$(CAFFE_PATH)</Value>
+      <EnvironmentVariable>true</EnvironmentVariable>
+    </BuildMacro>
+  </ItemGroup>
+</Project>

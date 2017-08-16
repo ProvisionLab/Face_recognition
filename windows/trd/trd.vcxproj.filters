@@ -11,6 +11,9 @@
     <Filter Include="src\SimpleJSON">
       <UniqueIdentifier>{994658b2-47e8-412d-afde-5d1da607f232}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\cards_recognition">
+      <UniqueIdentifier>{dbe3001f-c85d-47e1-98fb-3655813e513e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\trdaemon\src\trd.cpp">
@@ -24,6 +27,21 @@
     </ClCompile>
     <ClCompile Include="..\..\trdaemon\src\cards_table.cpp">
       <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\trdaemon\src\cards_recognition\point.cpp">
+      <Filter>src\cards_recognition</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\trdaemon\src\cards_recognition\kmeans.cpp">
+      <Filter>src\cards_recognition</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\trdaemon\src\cards_recognition\convolution_detector.cpp">
+      <Filter>src\cards_recognition</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\trdaemon\src\cards_recognition\cluster.cpp">
+      <Filter>src\cards_recognition</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\trdaemon\src\cards_recognition\black_jack.cpp">
+      <Filter>src\cards_recognition</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -47,6 +65,24 @@
     </ClInclude>
     <ClInclude Include="..\..\trdaemon\src\cards_table.hpp">
       <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\trdaemon\src\cards_recognition\point.h">
+      <Filter>src\cards_recognition</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\trdaemon\src\cards_recognition\kmeans.h">
+      <Filter>src\cards_recognition</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\trdaemon\src\cards_recognition\convolution_detector.h">
+      <Filter>src\cards_recognition</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\trdaemon\src\cards_recognition\cluster.h">
+      <Filter>src\cards_recognition</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\trdaemon\src\cards_recognition\black_jack.h">
+      <Filter>src\cards_recognition</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\trdaemon\src\cards_recognition\inst_layers.h">
+      <Filter>src\cards_recognition</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -42,6 +42,8 @@ bool CardsTable::set_config(std::string const & jsonConfig)
 		if (obj.hasKey("Game"))
 		{
 			Game = obj["Game"].ToString();
+			if (Game == "black-jack")
+				bj = true;
 		}
 
 		if (obj.hasKey("Crops"))
@@ -112,6 +114,7 @@ CardsTable::~CardsTable()
 
 bool CardsTable::init()
 {
+	detector.reset(new ConvolutionDetector("."));
 	// 2do: initialize network
 
 	return true;
@@ -120,22 +123,70 @@ bool CardsTable::init()
 void CardsTable::uninit()
 {
 	// 2do: release network resources
-
+	detector.release();
 }
 
 CardsTable::Results CardsTable::recognize(cv::Mat const & frame)
 {
 	Results results;
-
+	int frame_id = 0;
 	for (auto && ca :Crops)
 	{
 		cv::Mat area = get_area(frame, ca);
-	}
+		detector->loadFrame(area);
+		std::vector<Card> detection_results = detector->predict(frame_id);
+		for (int i = 0; i < detection_results.size(); i++)
+		{
+			cv::Rect r(detection_results[i].x, detection_results[i].y, 57, 57);
+			cv::rectangle(area, r, cv::Scalar(255, 0, 0));
+			string s_card = toCard(detection_results[i].rank);
+			string s_suit = toSuit(detection_results[i].suit);
+			cv::putText(area, s_card, cv::Point(r.x, r.y + r.height / 2), CV_FONT_HERSHEY_COMPLEX_SMALL, 0.8,
+				cv::Scalar(0, 0, 0), 1, CV_AA);
+			cv::putText(area, s_suit, cv::Point(r.x + r.width / 2, r.y + r.height / 2), CV_FONT_HERSHEY_COMPLEX_SMALL, 0.8,
+				cv::Scalar(0, 0, 0), 1, CV_AA);
 
-	for (auto && ca : Buttons)
+			current_results.cards.push_back(detection_results[i]);
+		}
+		if (bj)
+		{
+			processBlackJack(detection_results, area);
+		}
+		frame_id++;
+	}
+	if (Game == "baccarat")
 	{
-		cv::Mat area = get_area(frame, ca);
+		for (auto && ca : Buttons)
+		{
+			cv::Mat area = get_area(frame, ca);
+		}
 	}
 
 	return results;
+}
+
+void CardsTable::processBlackJack(std::vector<Card> & detection_results, cv::Mat & src)
+{
+	if (may_be_split)
+	{
+		if (split)
+		{
+			std::vector<Point> points;
+			cardsToPoins(detection_results, points);
+			int k = 2;
+			KMeans clustering(k, detection_results, 100);
+			clustering.run(points, src.size());
+			pointsToCards(points, detection_results);
+		}
+		else
+		{
+			split = checkSplit(detection_results, src.cols);
+			may_be_split = split ? true : false;
+		}
+
+	}
+	else
+	{
+		may_be_split = checkMayBeSplit(detection_results);
+	}
 }

@@ -1,6 +1,11 @@
 #pragma once
 
 #include <opencv2/opencv.hpp>
+#include <memory>
+
+#include "cards_recognition\convolution_detector.h"
+#include "cards_recognition\kmeans.h"
+#include "cards_recognition\black_jack.h"
 
 class CardsTable
 {
@@ -20,7 +25,7 @@ public:
 	struct Results
 	{
 		// 2do: fields
-
+		std::vector<Card>	cards;
 		std::string to_json() const;
 	};
 
@@ -32,7 +37,7 @@ public:
 	void uninit();
 
 	Results recognize(cv::Mat const & frame);
-
+	void processBlackJack(std::vector<Card> & detection_results, cv::Mat & src);
 protected:
 
 	cv::Mat get_area(cv::Mat const & frame, CropArea const & area) const;
@@ -44,4 +49,7 @@ protected:
 	std::string	Game;
 	std::vector<CropArea>	Crops;
 	std::vector<CropArea>	Buttons;
+	Results current_results;
+	std::unique_ptr<ConvolutionDetector> detector;
+	bool may_be_split, split, bj;
 };
