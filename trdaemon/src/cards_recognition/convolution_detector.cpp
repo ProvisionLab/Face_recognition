@@ -16,7 +16,7 @@ ConvolutionDetector::ConvolutionDetector(std::string binary_path)
 	thresh_suits_ = 0.85;
 	thresh_binary_ = 195;
 	
-	std::ifstream			configs(binary_path + "\\CCNN.cfg");
+	std::ifstream			configs("CCNN.cfg");
 	std::string cascade1_model, cascade1_trained, cascade2_model, cascade2_trained, cascade3n_model, cascade3n_trained, cascade3s_model, cascade3s_trained;
 	if (!configs.is_open())
 	{

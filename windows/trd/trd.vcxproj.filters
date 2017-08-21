@@ -43,6 +43,9 @@
     <ClCompile Include="..\..\trdaemon\src\cards_recognition\black_jack.cpp">
       <Filter>src\cards_recognition</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\trdaemon\src\cards_recognition\baccarat.cpp">
+      <Filter>src\cards_recognition</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\trdaemon\src\log.h">
@@ -82,6 +85,9 @@
       <Filter>src\cards_recognition</Filter>
     </ClInclude>
     <ClInclude Include="..\..\trdaemon\src\cards_recognition\inst_layers.h">
+      <Filter>src\cards_recognition</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\trdaemon\src\cards_recognition\baccarat.h">
       <Filter>src\cards_recognition</Filter>
     </ClInclude>
   </ItemGroup>

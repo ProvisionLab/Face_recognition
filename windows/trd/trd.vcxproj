@@ -150,6 +150,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\trdaemon\src\cards_recognition\baccarat.cpp" />
     <ClCompile Include="..\..\trdaemon\src\cards_recognition\cluster.cpp" />
     <ClCompile Include="..\..\trdaemon\src\cards_recognition\convolution_detector.cpp" />
     <ClCompile Include="..\..\trdaemon\src\cards_recognition\kmeans.cpp" />
@@ -161,6 +162,7 @@
     <ClCompile Include="..\..\trdaemon\src\redis_client.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\trdaemon\src\cards_recognition\baccarat.h" />
     <ClInclude Include="..\..\trdaemon\src\cards_recognition\cluster.h" />
     <ClInclude Include="..\..\trdaemon\src\cards_recognition\convolution_detector.h" />
     <ClInclude Include="..\..\trdaemon\src\cards_recognition\inst_layers.h" />

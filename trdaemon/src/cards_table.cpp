@@ -103,8 +103,19 @@ cv::Mat CardsTable::get_area(cv::Mat const & frame, CropArea const & area) const
 
 std::string CardsTable::Results::to_json() const
 {
+	auto obj = json::Object();
+	std::string string_result;
+	string_result = std::to_string(cards.first) + "=";
+	for (auto & card : cards.second)
+	{
+		string_result += std::to_string(card.num) + "," + std::to_string(card.hand_set) + ";";
+	}
+
+	obj["Data"] = string_result;
+
+	std::string json = obj.dump();
 	// 2do: convert results to json string
-	return {};
+	return json;
 }
 
 CardsTable::~CardsTable()
@@ -114,7 +125,7 @@ CardsTable::~CardsTable()
 
 bool CardsTable::init()
 {
-	detector.reset(new ConvolutionDetector("."));
+	detector.reset(new ConvolutionDetector(".\\"));
 	// 2do: initialize network
 
 	return true;
@@ -126,15 +137,19 @@ void CardsTable::uninit()
 	detector.release();
 }
 
-CardsTable::Results CardsTable::recognize(cv::Mat const & frame)
+std::vector<CardsTable::Results> CardsTable::recognize(cv::Mat const & frame)
 {
-	Results results;
-	int frame_id = 0;
-	for (auto && ca :Crops)
+	current_results.clear();
+	for (auto && ca : Crops)
 	{
+		Results results;
+		
 		cv::Mat area = get_area(frame, ca);
+		
 		detector->loadFrame(area);
-		std::vector<Card> detection_results = detector->predict(frame_id);
+		std::vector<Card> detection_results = detector->predict(ca.AreaNumber);
+
+		
 		for (int i = 0; i < detection_results.size(); i++)
 		{
 			cv::Rect r(detection_results[i].x, detection_results[i].y, 57, 57);
@@ -145,24 +160,34 @@ CardsTable::Results CardsTable::recognize(cv::Mat const & frame)
 				cv::Scalar(0, 0, 0), 1, CV_AA);
 			cv::putText(area, s_suit, cv::Point(r.x + r.width / 2, r.y + r.height / 2), CV_FONT_HERSHEY_COMPLEX_SMALL, 0.8,
 				cv::Scalar(0, 0, 0), 1, CV_AA);
-
-			current_results.cards.push_back(detection_results[i]);
+			
 		}
 		if (bj)
 		{
 			processBlackJack(detection_results, area);
 		}
-		frame_id++;
+
+		results.cards = std::make_pair(ca.AreaNumber, detection_results);
+
+		current_results.push_back(results);
+		cv::imshow(std::to_string(ca.AreaNumber), area);
+		cv::waitKey(1);
 	}
 	if (Game == "baccarat")
 	{
+		
 		for (auto && ca : Buttons)
 		{
 			cv::Mat area = get_area(frame, ca);
+			auto it = std::find_if(current_results.begin(), current_results.end(),
+				[id = ca.AreaNumber](Results const & r) {
+				return r.cards.first == id;
+			} );
+			processBaccarat(*it, area, ca.AreaNumber);
 		}
 	}
-
-	return results;
+	
+	return current_results;
 }
 
 void CardsTable::processBlackJack(std::vector<Card> & detection_results, cv::Mat & src)
@@ -189,4 +214,26 @@ void CardsTable::processBlackJack(std::vector<Card> & detection_results, cv::Mat
 	{
 		may_be_split = checkMayBeSplit(detection_results);
 	}
+}
+
+
+void CardsTable::processBaccarat(Results & detection_results, cv::Mat & src, int id)
+{
+
+	std::pair<cv::Point2f, bool> answer = gotChip(src, id, hasChip, steps);
+	if (answer.second)
+	{
+		int bet = checkBet(src.rows, answer.first);
+		Card button;
+		button.num = 53;
+		button.hand_set = bet;
+		detection_results.cards.second.push_back(button);
+	}
+
+#ifdef DRAW_CHIPS
+	std::string chip_frame_namee = "chips" + std::to_string(id);
+	cv::imshow(chip_frame_namee, src);
+	cv::waitKey(10);
+#endif
+
 }

@@ -127,16 +127,23 @@ void recognize(CardsTable & table, RedisClient & redis)
 
 					cv::Mat frame;
 					camera >> frame;
-
+					
+				//	cv::resize(frame, frame, cv::Size(640, 480));
+				//	cv::imshow("dbg", frame);
+					//cv::waitKey(1);
+					
 					if (!frame.empty())
 					{
 						// recognize frame using persons
 
-						auto results = table.recognize(frame).to_json();
+						auto results = table.recognize(frame);
 
 						if (!results.empty())
 						{
-							redis.report_recognized(results);
+							for( auto & result : results)
+							{
+								redis.report_recognized(result.to_json());
+							}
 #ifdef _DEBUG
 							//std::cout << results << std::endl;
 #endif
