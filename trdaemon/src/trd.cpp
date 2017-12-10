@@ -183,7 +183,7 @@ void run(std::string const & redis_host, std::string const & redis_port)
 	RedisClient redis(redis_host, redis_port);
 
 	LOG(LOG_INFO, "reading configuration...");
-
+ 
 	try
 	{
 		if (!redis.get_configuration())

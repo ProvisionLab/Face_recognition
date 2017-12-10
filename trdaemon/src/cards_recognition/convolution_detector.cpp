@@ -43,6 +43,7 @@ ConvolutionDetector::ConvolutionDetector(std::string binary_path)
 #endif
 	FLAGS_minloglevel = google::GLOG_FATAL;
 
+#ifdef __WIN32
 	net_.reset(new Net<float>(binary_path + "caffe_nets\\cascade1\\" + cascade1_model, TEST));
 	net_->CopyTrainedLayersFrom(binary_path + "caffe_nets\\cascade1\\" + cascade1_trained);
 
@@ -56,7 +57,21 @@ ConvolutionDetector::ConvolutionDetector(std::string binary_path)
 	suit_net_->CopyTrainedLayersFrom(binary_path + "caffe_nets\\suits\\" + cascade3s_trained);
 
 	std::cout << "Conv detector created" << std::endl;
+#else
+	net_.reset(new Net<float>(binary_path + "caffe_nets/cascade1/" + cascade1_model, TEST));
+	net_->CopyTrainedLayersFrom(binary_path + "caffe_nets/cascade1/" + cascade1_trained);
 
+	second_net_.reset(new Net<float>(binary_path + "caffe_nets/cascade2/" + cascade2_model, TEST));
+	second_net_->CopyTrainedLayersFrom(binary_path + "caffe_nets/cascade2/" + cascade2_trained);
+
+	card_net_.reset(new Net<float>(binary_path + "caffe_nets/ranks/" + cascade3n_model, TEST));
+	card_net_->CopyTrainedLayersFrom(binary_path + "caffe_nets/ranks/" + cascade3n_trained);
+
+	suit_net_.reset(new Net<float>(binary_path + "caffe_nets/suits/" + cascade3s_model, TEST));
+	suit_net_->CopyTrainedLayersFrom(binary_path + "caffe_nets/suits/" + cascade3s_trained);
+
+	std::cout << "Conv detector created" << std::endl;
+#endif
 }
 
 std::vector<Card> ConvolutionDetector::predict(int id)
@@ -419,8 +434,8 @@ double ConvolutionDetector::checkBack(cv::Rect roi)
 	cv::Mat sample;
 	try {
 		sample = img_(roi);
-		//загрузи картинку здесь с файла
-		//тут же на линуксе сохрани один пример картинки
+		//\E7\E0\E3\F0\F3\E7\E8 \EA\E0\F0\F2\E8\ED\EA\F3 \E7\E4\E5\F1\FC \F1 \F4\E0\E9\EB\E0
+		//\F2\F3\F2 \E6\E5 \ED\E0 \EB\E8\ED\F3\EA\F1\E5 \F1\EE\F5\F0\E0\ED\E8 \EE\E4\E8\ED \EF\F0\E8\EC\E5\F0 \EA\E0\F0\F2\E8\ED\EA\E8
 		//cv::imwrite("cas2.png", sample);
 	//	cv::imshow("smpl", sample);
 	//	cv::waitKey(0);

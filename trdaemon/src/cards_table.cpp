@@ -125,7 +125,7 @@ CardsTable::~CardsTable()
 
 bool CardsTable::init()
 {
-	detector.reset(new ConvolutionDetector(".\\"));
+	detector.reset(new ConvolutionDetector("./"));
 	// 2do: initialize network
 
 	return true;

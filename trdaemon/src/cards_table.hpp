@@ -3,10 +3,10 @@
 #include <opencv2/opencv.hpp>
 #include <memory>
 
-#include "cards_recognition\convolution_detector.h"
-#include "cards_recognition\kmeans.h"
-#include "cards_recognition\black_jack.h"
-#include "cards_recognition\baccarat.h"
+#include "cards_recognition/convolution_detector.h"
+#include "cards_recognition/kmeans.h"
+#include "cards_recognition/black_jack.h"
+#include "cards_recognition/baccarat.h"
 
 class CardsTable
 {
