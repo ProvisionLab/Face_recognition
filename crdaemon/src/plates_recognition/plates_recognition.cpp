@@ -29,7 +29,7 @@ void PlateRecognizer::init()
 {
     if (!openalpr)
     {
-        openalpr.reset(new alpr::Alpr("eu","/home/greeser/Work/toolkits/openalpr-2.3.0/config/openalpr.conf.defaults", "/home/greeser/Work/toolkits/openalpr-2.3.0/runtime_data"));
+        openalpr.reset(new alpr::Alpr("eu","openalpr.conf"));
 
         openalpr->setTopN(20);
 
@@ -39,8 +39,8 @@ void PlateRecognizer::init()
 
     if(!er_filter1 || !er_filter2)
     {
-        er_filter1 = createERFilterNM1(loadClassifierNM1("/home/greeser/Work/toolkits/opencv/opencv_contrib/modules/text/samples/trained_classifierNM1.xml"),8,0.00015f,0.13f,0.2f,true,0.1f);
-        er_filter2 = createERFilterNM2(loadClassifierNM2("/home/greeser/Work/toolkits/opencv/opencv_contrib/modules/text/samples/trained_classifierNM2.xml"),0.5);
+        er_filter1 = createERFilterNM1(loadClassifierNM1("./modules/text/samples/trained_classifierNM1.xml"),8,0.00015f,0.13f,0.2f,true,0.1f);
+        er_filter2 = createERFilterNM2(loadClassifierNM2("./modules/text/samples/trained_classifierNM2.xml"),0.5);
         std::cerr << "Filters init" << std::endl;
     } 
     if (!ocr)

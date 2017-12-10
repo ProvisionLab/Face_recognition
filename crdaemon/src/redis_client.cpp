@@ -143,8 +143,10 @@ void RedisClient::report_recognized(std::string const & plate_number, std::strin
 
 	auto data = json::Object();
 
-	data["PlateNumber"] = plate_number;
-	data["PlateImage"] = plate_image;
+//	data["PlateNumber"] = plate_number;
+//	data["PlateImage"] = plate_image;
+        data["Number"] = plate_number;
+        data["Photo"] = plate_image;
 
 	obj["Data"] = data;
 
